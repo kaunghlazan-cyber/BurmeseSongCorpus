@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burmese Corpus Concordance</title>
+    <title>Burmese Song Lyrics Corpus Concordance</title>
     <style>
         /* --- Modern & Clean Visuals --- */
         body { 
@@ -72,64 +72,64 @@
 </head>
 <body>
 
-    <h1>Burmese Corpus Tool</h1>
+    <h1> မြန်မာသီချင်းစာသား စကားလုံး ရှာစက် Burmese Song Lyrics Concordancer</h1>
 
     <div class="controls">
         <div id="status">Loading corpus.txt...</div>
         
         <div class="input-group">
-            <label>Search Word</label>
-            <input type="text" id="searchInput" placeholder="e.g., ကျောင်း">
+            <label>ရှာလိုသည့် စကားလုံး</label>
+            <input type="text" id="searchInput" placeholder="e.g., အချစ်">
         </div>
 
         <div class="input-group">
-            <label>Concordance Limit</label>
+            <label>ပြသရန် စာကြောင်းအရေအတွက်</label>
             <select id="limitSelect">
-                <option value="20">Show 20</option>
-                <option value="50">Show 50</option>
-                <option value="all">Show All</option>
+                <option value="20">၂၀ ကြည့်မည်</option>
+                <option value="50">၅၀ ကြည့်မည်</option>
+                <option value="all">အကုန်ကြည့်မည် (စက်လေးတတ်သည်)</option>
             </select>
         </div>
 
         <!-- Fixed settings to prevent crashing -->
         <div class="input-group">
-            <label>Pattern Settings</label>
-            <div class="static-info">Range: 3 words | Min Freq: 20</div>
+            <label>စကားစု အရေအတွက်</label>
+            <div class="static-info">ဝဲယာ သုံးလုံးအထိပြမည်။ အနည်းဆုံး ကြိမ်ရေ ၂၀။​ </div>
         </div>
 
-        <button onclick="runSearch()">Search</button>
+        <button onclick="runSearch()">ရှာမည်။</button>
     </div>
 
     <!-- 1. Concordance Section -->
-    <div class="section-title">Concordance Lines (KWIC)</div>
+    <div class="section-title"> ရှာသည့်စကားလုံးပါ စာကြောင်းများ (KWIC)</div>
     <table id="resultsTable">
         <thead>
             <tr>
-                <th style="text-align:right; width:40%;">Left Context</th>
-                <th style="text-align:center; width:20%;">Keyword</th>
-                <th style="text-align:left; width:40%;">Right Context</th>
+                <th style="text-align:right; width:40%;">ဝဲဘက်မှ စကားလုံးများ </th>
+                <th style="text-align:center; width:20%;"> ဦးတည် စကားလုံး </th>
+                <th style="text-align:left; width:40%;">ယာဘက်မှ စကားလုံးများ</th>
             </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
     </table>
 
     <!-- 2. Collocates Section -->
-    <div class="section-title">Common Phrases (High Frequency)</div>
-    <p style="font-size:0.9em; color:#666;">Showing phrases (up to 3 words left/right) appearing <strong>20 times</strong> or more, sorted by Frequency.</p>
+    <div class="section-title"> အသုံးကြိမ်ရေမြင့် စကားစုများ</div>
+    <p style="font-size:0.9em; color:#666;"> အောက်တွင်ပြသည့်စကားစုများမှာ  <strong> အကြိမ် ၂၀ </strong> နှင့်အထက် တွေ့ရသည့် ဝဲယာ စကားလုံး သုံးလုံးအထိ ပါသည့် စကားစုများကို ပြထားခြင်းဖြစ်သည်။ </p>
     
     <table id="collocateTable">
         <thead>
             <tr>
-                <th>Pattern Type</th>
-                <th>Phrase Found</th>
-                <th style="text-align:right">Frequency</th>
+                <th>စကားစုတည်ဆောက်ပုံ </th>
+                <th>တွေ့ရသည့် စကားစု</th>
+                <th style="text-align:right">အကြိမ်ရေ</th>
             </tr>
         </thead>
         <tbody id="collocateBody"></tbody>
     </table>
 
     <div class="credit">
-        <p>Syllable breaking logic adapted from <a href="https://github.com/ye-kyaw-thu/sylbreak" target="_blank">ye-kyaw-thu/sylbreak</a>.</p>
+        <p>Syllable ခွဲသည့်ကုတ်ကို ဆရာရဲကျော်သူ၏ <a href="https://github.com/ye-kyaw-thu/sylbreak" target="_blank">ye-kyaw-thu/sylbreak</a> မှ ရယူထားပါသည်။</p>
     </div>
 
 <script>
