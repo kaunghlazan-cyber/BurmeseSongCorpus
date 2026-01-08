@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burmese Corpus Concordance</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .controls { background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        input[type="text"] { padding: 8px; width: 300px; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
+        select, button { padding: 8px; }
+        
+        /* Concordance Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #333; color: #fff; padding: 10px; text-align: left; }
+        td { padding: 5px; border-bottom: 1px solid #ddd; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
+        
+        /* KWIC Alignment */
+        .left-ctx { text-align: right; width: 45%; color: #555; }
+        .keyword { text-align: center; width: 10%; font-weight: bold; color: #d9534f; background: #fff0f0; }
+        .right-ctx { text-align: left; width: 45%; color: #555; }
+        
+        #status { margin-top: 10px; font-style: italic; color: #666; }
+        .credit { margin-top: 50px; font-size: 0.8em; color: #888; border-top: 1px solid #ccc; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Burmese Concordance Tool</h1>
+
+    <div class="controls">
+        <!-- Load Status -->
+        <div id="status">Loading corpus.txt...</div>
+        <br>
+        
+        <!-- Search Inputs -->
+        <input type="text" id="searchInput" placeholder="Enter Burmese word (e.g., ကျောင်း)">
+        <select id="limitSelect">
+            <option value="20">View 20 lines</option>
+            <option value="50">View 50 lines</option>
+            <option value="all">View All lines</option>
+        </select>
+        <button onclick="runSearch()">Search</button>
+    </div>
+
+    <!-- Results Table -->
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th style="text-align:right">Left Context</th>
+                <th style="text-align:center">Keyword</th>
+                <th style="text-align:left">Right Context</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+            <!-- Results go here -->
+        </tbody>
+    </table>
+
+    <div class="credit">
+        <p>Syllable breaking logic adapted from <a href="https://github.com/ye-kyaw-thu/sylbreak/blob/master/Javascript/resegment.js" target="_blank">ye-kyaw-thu/sylbreak</a>. Thank you to the developers.</p>
+    </div>
+
+<script>
+    let corpusData = []; // This will hold the corpus array
+
+    // 1. Load the corpus.txt file immediately when page opens
+    fetch('corpus.txt')
+        .then(response => response.text())
+        .then(text => {
+            // Assume corpus.txt is already syllable broken with spaces
+            // We split by space to get an array of tokens
+            // Clean up newlines to ensure continuous text
+            let cleanText = text.replace(/[\r\n]+/g, ' '); 
+            corpusData = cleanText.split(/\s+/); 
+            document.getElementById('status').innerText = "Corpus loaded (" + corpusData.length + " syllables). Ready to search.";
+            document.getElementById('status').style.color = "green";
+        })
+        .catch(err => {
+            document.getElementById('status').innerText = "Error: Could not load 'corpus.txt'. Make sure the file exists.";
+            document.getElementById('status').style.color = "red";
+        });
+
+    // 2. Syllable Breaking Function
+    // Adapted logic to break input query if it isn't already broken
+    function sylBreak(text) {
+        // Regex pattern for Burmese consonant modification and syllable breaking
+        // This is a simplified regex based on the phonological rules of the referenced repo
+        const myanmarConsonant = "[\u1000-\u1021]";
+        const otherChars = "[\u1022-\u103F\u104C-\u104F\u1050-\u109F]";
+        
+        let re = new RegExp("((?<!^|\\s)" + myanmarConsonant + "(?![\\u1037\\u1039\\u103A]))", "g");
+        
+        // Insert a space before consonants that start a new syllable
+        let broken = text.replace(re, " $1");
+        
+        // Normalize spaces
+        return broken.replace(/\s+/g, ' ').trim();
+    }
+
+    // 3. Search Logic
+    function runSearch() {
+        const rawInput = document.getElementById('searchInput').value.trim();
+        const limit = document.getElementById('limitSelect').value;
+        const tbody = document.getElementById('resultsBody');
+        tbody.innerHTML = ""; // Clear previous results
+
+        if(!rawInput) return;
+
+        // Break the input query into syllables
+        const processedQuery = sylBreak(rawInput);
+        const queryTokens = processedQuery.split(" ");
+        const firstToken = queryTokens[0]; // We search for the start of the phrase
+
+        // We will store matches here
+        let matches = [];
+        
+        // Loop through corpus
+        for (let i = 0; i < corpusData.length; i++) {
+            if (corpusData[i] === firstToken) {
+                // Check if the full phrase matches (if user typed multiple words)
+                let isMatch = true;
+                for(let j = 0; j < queryTokens.length; j++) {
+                    if(corpusData[i + j] !== queryTokens[j]) {
+                        isMatch = false;
+                        break;
+                    }
+                }
+
+                if (isMatch) {
+                    // Get Context (10 left, 10 right)
+                    // Note: 'i' is the start of the match. 
+                    // Left context ends at i. Right context starts at i + length of query.
+                    
+                    let startLeft = Math.max(0, i - 10);
+                    let leftCtx = corpusData.slice(startLeft, i).join(" ");
+                    
+                    let endRight = Math.min(corpusData.length, i + queryTokens.length + 10);
+                    let rightCtx = corpusData.slice(i + queryTokens.length, endRight).join(" ");
+
+                    matches.push({
+                        left: leftCtx,
+                        keyword: processedQuery,
+                        right: rightCtx
+                    });
+                }
+            }
+        }
+
+        // Apply Limit
+        let displayCount = matches.length;
+        if (limit !== 'all') {
+            displayCount = Math.min(matches.length, parseInt(limit));
+        }
+
+        document.getElementById('status').innerText = `Found ${matches.length} matches. Showing ${displayCount}.`;
+
+        // Render Rows
+        for (let k = 0; k < displayCount; k++) {
+            let row = `<tr>
+                <td class="left-ctx">${matches[k].left}</td>
+                <td class="keyword">${matches[k].keyword}</td>
+                <td class="right-ctx">${matches[k].right}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        }
+
+        if(matches.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center">No matches found.</td></tr>`;
+        }
+    }
+</script>
+
+</body>
+</html>
