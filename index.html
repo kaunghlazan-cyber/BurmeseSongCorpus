@@ -3,170 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burmese Song Lyrics Corpus Concordancer</title>
+    <title>Burmese Corpus Concordance & Collocates</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; }
-        .controls { background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        input[type="text"] { padding: 8px; width: 300px; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
-        select, button { padding: 8px; }
+        /* --- Modern & Clean Visuals --- */
+        body { 
+            font-family: "Pyidaungsu", "Myanmar3", "Segoe UI", sans-serif; 
+            padding: 40px; 
+            background-color: #f8f9fa; 
+            color: #333;
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+
+        /* Search Box Area */
+        .controls { 
+            background: #ffffff; padding: 25px; border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; margin-bottom: 30px;
+        }
+
+        .input-group { margin: 10px; display: inline-block; }
+        label { font-size: 0.9em; color: #666; display: block; margin-bottom: 5px; text-align: left; }
+
+        input[type="text"] { 
+            padding: 12px; width: 300px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; 
+        }
         
-        /* Concordance Table Styles */
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #333; color: #fff; padding: 10px; text-align: left; }
-        td { padding: 5px; border-bottom: 1px solid #ddd; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
-        
-        /* KWIC Alignment */
-        .left-ctx { text-align: right; width: 45%; color: #555; }
-        .keyword { text-align: center; width: 10%; font-weight: bold; color: #d9534f; background: #fff0f0; }
-        .right-ctx { text-align: left; width: 45%; color: #555; }
-        
-        #status { margin-top: 10px; font-style: italic; color: #666; }
-        .credit { margin-top: 50px; font-size: 0.8em; color: #888; border-top: 1px solid #ccc; padding-top: 10px; }
+        input[type="number"] {
+            padding: 12px; width: 80px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;
+        }
+
+        select { padding: 12px; border-radius: 6px; border: 1px solid #ddd; background: white; }
+
+        button { 
+            padding: 12px 25px; background-color: #009879; color: white; border: none; 
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; 
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #007f65; }
+
+        /* Sections */
+        .section-title {
+            margin-top: 40px; margin-bottom: 15px; font-size: 1.4em; color: #009879; border-bottom: 2px solid #ddd; padding-bottom: 10px;
+        }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        th { background-color: #009879; color: #ffffff; padding: 15px; text-align: left; font-size: 0.9em; }
+        td { padding: 10px 15px; border-bottom: 1px solid #eee; line-height: 1.6; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+
+        /* Concordance Specifics */
+        .left-ctx { text-align: right; width: 42%; color: #555; }
+        .keyword { text-align: center; width: 10%; font-weight: bold; color: #d9534f; background: #fff0f0; white-space: nowrap; }
+        .right-ctx { text-align: left; width: 42%; color: #555; }
+        .count-badge { font-size: 0.8em; background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 5px; white-space: nowrap; }
+
+        /* Collocate Specifics */
+        .col-len { width: 10%; font-weight: bold; color: #555; }
+        .col-phrase { width: 70%; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
+        .col-count { width: 20%; text-align: right; font-weight: bold; color: #009879; }
+
+        #status { font-weight: 500; margin-bottom: 10px; }
+        .credit { margin-top: 50px; text-align: center; color: #aaa; font-size: 0.9em; }
+        .credit a { color: #aaa; text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <h1>Burmese Song Lyrics Corpus Concordancer မြန်မာသီချင်းစာသား စကားလုံး ရှာစက်</h1>
+    <h1>Burmese Corpus Tool</h1>
 
     <div class="controls">
-        <!-- Load Status -->
         <div id="status">Loading corpus.txt...</div>
-        <br>
         
-        <!-- Search Inputs -->
-        <input type="text" id="searchInput" placeholder="ရှာလိုသည့် မြန်မာစကားလုံး ရေးသွင်းပါ။​ (ဥပမာ- အချစ်)">
-        <select id="limitSelect">
-            <option value="20">စာကြောင်း ၂၀ ကြည့်မည်</option>
-            <option value="50">စာကြောင်း ၅၀ ကြည့်မည်s</option>
-            <option value="all">ရှိတာအကုန်ကြည့်မည်။</option>
-        </select>
+        <div class="input-group">
+            <label>Search Word (Burmese)</label>
+            <input type="text" id="searchInput" placeholder="e.g., ကျောင်း">
+        </div>
+
+        <div class="input-group">
+            <label>Concordance Limit</label>
+            <select id="limitSelect">
+                <option value="20">Show 20</option>
+                <option value="50">Show 50</option>
+                <option value="all">Show All</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Pattern Frequency Min</label>
+            <input type="number" id="freqThreshold" value="5" min="2">
+        </div>
+
         <button onclick="runSearch()">Search</button>
     </div>
 
-    <!-- Results Table -->
+    <!-- 1. Concordance Section -->
+    <div class="section-title">Concordance Lines (KWIC)</div>
     <table id="resultsTable">
         <thead>
             <tr>
-                <th style="text-align:right">ဝဲဘက်ရှိစကားလုံးများ </th>
-                <th style="text-align:center"> ရှာသည့်စကားလုံး </th>
-                <th style="text-align:left">ယာဘက်ရှိစကားလုံးများ</th>
+                <th style="text-align:right">Left Context</th>
+                <th style="text-align:center">Keyword</th>
+                <th style="text-align:left">Right Context</th>
             </tr>
         </thead>
-        <tbody id="resultsBody">
-            <!-- Results go here -->
-        </tbody>
+        <tbody id="resultsBody"></tbody>
+    </table>
+
+    <!-- 2. Collocates Section -->
+    <div class="section-title">Repeated Phrase Patterns (Collocates)</div>
+    <p style="font-size:0.9em; color:#666;">Showing phrases appearing at least <span id="dispThresh">5</span> times.</p>
+    
+    <table id="collocateTable">
+        <thead>
+            <tr>
+                <th>Pattern Type</th>
+                <th>Phrase Found</th>
+                <th style="text-align:right">Frequency</th>
+            </tr>
+        </thead>
+        <tbody id="collocateBody"></tbody>
     </table>
 
     <div class="credit">
-        <p>Syllable breaking logic adapted from <a href="https://github.com/ye-kyaw-thu/sylbreak/blob/master/Javascript/resegment.js" target="_blank">ye-kyaw-thu/sylbreak</a>. ဆရာရဲကျော်သူ၊ ဆရာချမ်းမြတ်ကိုကို တို့၏ Syllable ခွဲပေးသည့်ကုတ်အတွက်ကျေးဇူးတင်ပါသည်။.</p>
+        <p>Syllable breaking logic adapted from <a href="https://github.com/ye-kyaw-thu/sylbreak" target="_blank">ye-kyaw-thu/sylbreak</a>.</p>
     </div>
 
 <script>
-    let corpusData = []; // This will hold the corpus array
+    let corpusData = []; 
 
-    // 1. Load the corpus.txt file immediately when page opens
+    // 1. Load Corpus
     fetch('corpus.txt')
         .then(response => response.text())
         .then(text => {
-            // Assume corpus.txt is already syllable broken with spaces
-            // We split by space to get an array of tokens
-            // Clean up newlines to ensure continuous text
             let cleanText = text.replace(/[\r\n]+/g, ' '); 
             corpusData = cleanText.split(/\s+/); 
-            document.getElementById('status').innerText = "Corpus ထည့်သွင်းပြီး စာလုံးရေ (" + corpusData.length + " syllables). ရှာဖွေရန် အဆင်သင့်ဖြစ်ပါသည်။";
+            document.getElementById('status').innerText = "Corpus loaded (" + corpusData.length + " syllables).";
             document.getElementById('status').style.color = "green";
         })
         .catch(err => {
-            document.getElementById('status').innerText = "Error: Could not load 'corpus.txt'. Make sure the file exists.";
+            document.getElementById('status').innerText = "Error loading corpus.txt";
             document.getElementById('status').style.color = "red";
         });
 
-    // 2. Syllable Breaking Function
-    // Adapted logic to break input query if it isn't already broken
+    // 2. Syllable Breaker
     function sylBreak(text) {
-        // Regex pattern for Burmese consonant modification and syllable breaking
-        // This is a simplified regex based on the phonological rules of the referenced repo
         const myanmarConsonant = "[\u1000-\u1021]";
-        const otherChars = "[\u1022-\u103F\u104C-\u104F\u1050-\u109F]";
-        
         let re = new RegExp("((?<!^|\\s)" + myanmarConsonant + "(?![\\u1037\\u1039\\u103A]))", "g");
-        
-        // Insert a space before consonants that start a new syllable
         let broken = text.replace(re, " $1");
-        
-        // Normalize spaces
         return broken.replace(/\s+/g, ' ').trim();
     }
 
     // 3. Search Logic
     function runSearch() {
         const rawInput = document.getElementById('searchInput').value.trim();
-        const limit = document.getElementById('limitSelect').value;
-        const tbody = document.getElementById('resultsBody');
-        tbody.innerHTML = ""; // Clear previous results
+        const limitStr = document.getElementById('limitSelect').value;
+        const thresholdInput = parseInt(document.getElementById('freqThreshold').value) || 5;
+        document.getElementById('dispThresh').innerText = thresholdInput;
+
+        const conTbody = document.getElementById('resultsBody');
+        const colTbody = document.getElementById('collocateBody');
+        conTbody.innerHTML = "";
+        colTbody.innerHTML = "";
 
         if(!rawInput) return;
 
-        // Break the input query into syllables
+        // Process Query
         const processedQuery = sylBreak(rawInput);
         const queryTokens = processedQuery.split(" ");
-        const firstToken = queryTokens[0]; // We search for the start of the phrase
+        const firstToken = queryTokens[0];
+        const queryLen = queryTokens.length;
 
-        // We will store matches here
-        let matches = [];
-        
-        // Loop through corpus
+        // --- Step A: Find all Raw Matches ---
+        // We store the raw tokens arrays to calculate patterns later
+        let rawMatches = [];
+
         for (let i = 0; i < corpusData.length; i++) {
             if (corpusData[i] === firstToken) {
-                // Check if the full phrase matches (if user typed multiple words)
                 let isMatch = true;
-                for(let j = 0; j < queryTokens.length; j++) {
+                for(let j = 0; j < queryLen; j++) {
                     if(corpusData[i + j] !== queryTokens[j]) {
-                        isMatch = false;
-                        break;
+                        isMatch = false; break;
                     }
                 }
 
                 if (isMatch) {
-                    // Get Context (10 left, 10 right)
-                    // Note: 'i' is the start of the match. 
-                    // Left context ends at i. Right context starts at i + length of query.
-                    
+                    // Extract Tokens
                     let startLeft = Math.max(0, i - 10);
-                    let leftCtx = corpusData.slice(startLeft, i).join(" ");
+                    let leftTokens = corpusData.slice(startLeft, i);
                     
-                    let endRight = Math.min(corpusData.length, i + queryTokens.length + 10);
-                    let rightCtx = corpusData.slice(i + queryTokens.length, endRight).join(" ");
+                    let endRight = Math.min(corpusData.length, i + queryLen + 10);
+                    let rightTokens = corpusData.slice(i + queryLen, endRight);
 
-                    matches.push({
-                        left: leftCtx,
-                        keyword: processedQuery,
-                        right: rightCtx
+                    rawMatches.push({
+                        leftToks: leftTokens,
+                        keyStr: processedQuery,
+                        rightToks: rightTokens,
+                        fullIndex: i
                     });
                 }
             }
         }
 
-        // Apply Limit
-        let displayCount = matches.length;
-        if (limit !== 'all') {
-            displayCount = Math.min(matches.length, parseInt(limit));
-        }
+        document.getElementById('status').innerText = `Found ${rawMatches.length} raw hits. Processing...`;
 
-        document.getElementById('status').innerText = `Found ${matches.length} matches. Showing ${displayCount}.`;
+        // --- Step B: Deduplicate / Collate Concordance Lines ---
+        // We group by the visual string: "Left String | Right String"
+        let groupedConcordance = {};
+        
+        rawMatches.forEach(m => {
+            // Join tokens to make a unique string key
+            let lStr = m.leftToks.join(" ");
+            let rStr = m.rightToks.join(" ");
+            let uniqueKey = lStr + "|||" + rStr; // Separator
 
-        // Render Rows
+            if (!groupedConcordance[uniqueKey]) {
+                groupedConcordance[uniqueKey] = {
+                    left: lStr,
+                    right: rStr,
+                    count: 0
+                };
+            }
+            groupedConcordance[uniqueKey].count++;
+        });
+
+        // Convert grouped object to array
+        let uniqueMatches = Object.values(groupedConcordance);
+        
+        // Display Concordance (Applied Limit)
+        let displayCount = uniqueMatches.length;
+        if (limitStr !== 'all') displayCount = Math.min(uniqueMatches.length, parseInt(limitStr));
+
         for (let k = 0; k < displayCount; k++) {
+            let item = uniqueMatches[k];
+            let countBadge = item.count > 1 ? `<span class="count-badge">(${item.count} times)</span>` : "";
+            
             let row = `<tr>
-                <td class="left-ctx">${matches[k].left}</td>
-                <td class="keyword">${matches[k].keyword}</td>
-                <td class="right-ctx">${matches[k].right}</td>
+                <td class="left-ctx">${item.left}</td>
+                <td class="keyword">${processedQuery}</td>
+                <td class="right-ctx">${item.right} ${countBadge}</td>
             </tr>`;
-            tbody.innerHTML += row;
+            conTbody.innerHTML += row;
+        }
+        
+        if(uniqueMatches.length === 0) conTbody.innerHTML = `<tr><td colspan="3" style="text-align:center">No matches found.</td></tr>`;
+
+        // --- Step C: Pattern / Collocate Analysis ---
+        // Logic: Scan rawMatches. Check 5 words right, 4 words right... then 5 words left, etc.
+        
+        let patternCounts = {}; // Key: "Type|Phrase", Value: Count
+
+        rawMatches.forEach(m => {
+            // 1. Right Side Analysis (Search + 5, Search + 4 ... Search + 1)
+            // m.rightToks contains up to 10 words. We only care about first 5.
+            for (let len = 5; len >= 1; len--) {
+                // Check if we actually have enough tokens
+                if (m.rightToks.length >= len) {
+                    let phraseTokens = m.rightToks.slice(0, len);
+                    let phrase = processedQuery + " " + phraseTokens.join(" "); // Search word + Context
+                    let type = `Right + ${len}`;
+                    let key = type + "||" + phrase;
+                    patternCounts[key] = (patternCounts[key] || 0) + 1;
+                }
+            }
+
+            // 2. Left Side Analysis (5 + Search ... 1 + Search)
+            // m.leftToks contains up to 10 words. We need the LAST 'len' words of that array.
+            for (let len = 5; len >= 1; len--) {
+                if (m.leftToks.length >= len) {
+                    // Get last 'len' tokens
+                    let phraseTokens = m.leftToks.slice(m.leftToks.length - len);
+                    let phrase = phraseTokens.join(" ") + " " + processedQuery; // Context + Search word
+                    let type = `Left + ${len}`;
+                    let key = type + "||" + phrase;
+                    patternCounts[key] = (patternCounts[key] || 0) + 1;
+                }
+            }
+        });
+
+        // Filter by Threshold and Sort
+        let sortedPatterns = [];
+        for (let key in patternCounts) {
+            if (patternCounts[key] >= thresholdInput) {
+                let parts = key.split("||");
+                sortedPatterns.push({
+                    type: parts[0],
+                    phrase: parts[1],
+                    count: patternCounts[key]
+                });
+            }
         }
 
-        if(matches.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center">No matches found.</td></tr>`;
+        // Sort: First by Pattern Type (Length 5 down to 1), then by frequency
+        // Helper to extract length from type string "Right + 5"
+        function getLen(str) { return parseInt(str.split('+')[1]); }
+        
+        sortedPatterns.sort((a, b) => {
+            let lenA = getLen(a.type);
+            let lenB = getLen(b.type);
+            if (lenA !== lenB) return lenB - lenA; // Descending Length (5 first)
+            return b.count - a.count; // Descending Frequency
+        });
+
+        // Render Collocates
+        if (sortedPatterns.length === 0) {
+            colTbody.innerHTML = `<tr><td colspan="3" style="text-align:center">No patterns found repeating ${thresholdInput} or more times.</td></tr>`;
+        } else {
+            sortedPatterns.forEach(p => {
+                let row = `<tr>
+                    <td class="col-len">${p.type}</td>
+                    <td class="col-phrase">${p.phrase}</td>
+                    <td class="col-count">${p.count}</td>
+                </tr>`;
+                colTbody.innerHTML += row;
+            });
         }
     }
 </script>
