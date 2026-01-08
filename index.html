@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burmese Corpus Concordance & Collocates</title>
+    <title>Burmese Corpus Concordance</title>
     <style>
         /* --- Modern & Clean Visuals --- */
         body { 
@@ -23,23 +23,23 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; margin-bottom: 30px;
         }
 
-        .input-group { margin: 10px; display: inline-block; }
-        label { font-size: 0.9em; color: #666; display: block; margin-bottom: 5px; text-align: left; }
+        .input-group { margin: 10px; display: inline-block; vertical-align: top; }
+        label { font-size: 0.85em; color: #666; display: block; margin-bottom: 5px; text-align: left; font-weight: bold; }
 
         input[type="text"] { 
             padding: 12px; width: 300px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; 
         }
-        
-        input[type="number"] {
-            padding: 12px; width: 80px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;
-        }
 
         select { padding: 12px; border-radius: 6px; border: 1px solid #ddd; background: white; }
+
+        .static-info {
+            padding: 12px; background: #e9ecef; border-radius: 6px; color: #555; font-size: 14px; display: inline-block;
+        }
 
         button { 
             padding: 12px 25px; background-color: #009879; color: white; border: none; 
             border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; 
-            transition: background 0.3s;
+            transition: background 0.3s; margin-top: 22px; /* Align with inputs */
         }
         button:hover { background-color: #007f65; }
 
@@ -49,20 +49,20 @@
         }
 
         /* Tables */
-        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; margin-bottom: 20px; table-layout: fixed; }
         th { background-color: #009879; color: #ffffff; padding: 15px; text-align: left; font-size: 0.9em; }
-        td { padding: 10px 15px; border-bottom: 1px solid #eee; line-height: 1.6; }
+        td { padding: 10px 15px; border-bottom: 1px solid #eee; line-height: 1.6; word-wrap: break-word; }
         tr:nth-child(even) { background-color: #f9f9f9; }
 
         /* Concordance Specifics */
-        .left-ctx { text-align: right; width: 42%; color: #555; }
-        .keyword { text-align: center; width: 10%; font-weight: bold; color: #d9534f; background: #fff0f0; white-space: nowrap; }
-        .right-ctx { text-align: left; width: 42%; color: #555; }
-        .count-badge { font-size: 0.8em; background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 5px; white-space: nowrap; }
+        .left-ctx { text-align: right; width: 40%; color: #555; }
+        .keyword { text-align: center; width: 20%; font-weight: bold; color: #d9534f; background: #fff0f0; white-space: nowrap; }
+        .right-ctx { text-align: left; width: 40%; color: #555; }
+        .count-badge { font-size: 0.8em; background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 5px; white-space: nowrap; display: inline-block;}
 
         /* Collocate Specifics */
-        .col-len { width: 10%; font-weight: bold; color: #555; }
-        .col-phrase { width: 70%; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
+        .col-len { width: 15%; font-weight: bold; color: #555; }
+        .col-phrase { width: 65%; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
         .col-count { width: 20%; text-align: right; font-weight: bold; color: #009879; }
 
         #status { font-weight: 500; margin-bottom: 10px; }
@@ -78,7 +78,7 @@
         <div id="status">Loading corpus.txt...</div>
         
         <div class="input-group">
-            <label>Search Word (Burmese)</label>
+            <label>Search Word</label>
             <input type="text" id="searchInput" placeholder="e.g., ကျောင်း">
         </div>
 
@@ -91,9 +91,10 @@
             </select>
         </div>
 
+        <!-- Fixed settings to prevent crashing -->
         <div class="input-group">
-            <label>Pattern Frequency Min</label>
-            <input type="number" id="freqThreshold" value="5" min="2">
+            <label>Pattern Settings</label>
+            <div class="static-info">Range: 3 words | Min Freq: 20</div>
         </div>
 
         <button onclick="runSearch()">Search</button>
@@ -104,17 +105,17 @@
     <table id="resultsTable">
         <thead>
             <tr>
-                <th style="text-align:right">Left Context</th>
-                <th style="text-align:center">Keyword</th>
-                <th style="text-align:left">Right Context</th>
+                <th style="text-align:right; width:40%;">Left Context</th>
+                <th style="text-align:center; width:20%;">Keyword</th>
+                <th style="text-align:left; width:40%;">Right Context</th>
             </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
     </table>
 
     <!-- 2. Collocates Section -->
-    <div class="section-title">Repeated Phrase Patterns (Collocates)</div>
-    <p style="font-size:0.9em; color:#666;">Showing phrases appearing at least <span id="dispThresh">5</span> times.</p>
+    <div class="section-title">Common Phrases (High Frequency)</div>
+    <p style="font-size:0.9em; color:#666;">Showing phrases (up to 3 words left/right) appearing <strong>20 times</strong> or more, sorted by Frequency.</p>
     
     <table id="collocateTable">
         <thead>
@@ -133,6 +134,9 @@
 
 <script>
     let corpusData = []; 
+    // Hardcoded constraints to prevent crashing
+    const FREQ_THRESHOLD = 20; 
+    const MAX_PHRASE_LEN = 3; 
 
     // 1. Load Corpus
     fetch('corpus.txt')
@@ -140,7 +144,7 @@
         .then(text => {
             let cleanText = text.replace(/[\r\n]+/g, ' '); 
             corpusData = cleanText.split(/\s+/); 
-            document.getElementById('status').innerText = "Corpus loaded (" + corpusData.length + " syllables).";
+            document.getElementById('status').innerText = "Corpus loaded (" + corpusData.length.toLocaleString() + " syllables).";
             document.getElementById('status').style.color = "green";
         })
         .catch(err => {
@@ -160,9 +164,7 @@
     function runSearch() {
         const rawInput = document.getElementById('searchInput').value.trim();
         const limitStr = document.getElementById('limitSelect').value;
-        const thresholdInput = parseInt(document.getElementById('freqThreshold').value) || 5;
-        document.getElementById('dispThresh').innerText = thresholdInput;
-
+        
         const conTbody = document.getElementById('resultsBody');
         const colTbody = document.getElementById('collocateBody');
         conTbody.innerHTML = "";
@@ -170,156 +172,140 @@
 
         if(!rawInput) return;
 
-        // Process Query
-        const processedQuery = sylBreak(rawInput);
-        const queryTokens = processedQuery.split(" ");
-        const firstToken = queryTokens[0];
-        const queryLen = queryTokens.length;
+        document.getElementById('status').innerText = "Processing...";
 
-        // --- Step A: Find all Raw Matches ---
-        // We store the raw tokens arrays to calculate patterns later
-        let rawMatches = [];
+        // Use setTimeout to allow UI to update before heavy processing
+        setTimeout(() => {
+            // Process Query
+            const processedQuery = sylBreak(rawInput);
+            const queryTokens = processedQuery.split(" ");
+            const firstToken = queryTokens[0];
+            const queryLen = queryTokens.length;
 
-        for (let i = 0; i < corpusData.length; i++) {
-            if (corpusData[i] === firstToken) {
-                let isMatch = true;
-                for(let j = 0; j < queryLen; j++) {
-                    if(corpusData[i + j] !== queryTokens[j]) {
-                        isMatch = false; break;
+            // --- Step A: Find matches ---
+            let rawMatches = [];
+
+            for (let i = 0; i < corpusData.length; i++) {
+                if (corpusData[i] === firstToken) {
+                    let isMatch = true;
+                    for(let j = 0; j < queryLen; j++) {
+                        if(corpusData[i + j] !== queryTokens[j]) {
+                            isMatch = false; break;
+                        }
+                    }
+
+                    if (isMatch) {
+                        // Extract Tokens (10 for display, but we only calculate stats on 3)
+                        let startLeft = Math.max(0, i - 10);
+                        let leftTokens = corpusData.slice(startLeft, i);
+                        
+                        let endRight = Math.min(corpusData.length, i + queryLen + 10);
+                        let rightTokens = corpusData.slice(i + queryLen, endRight);
+
+                        rawMatches.push({
+                            leftToks: leftTokens,
+                            rightToks: rightTokens
+                        });
+                    }
+                }
+            }
+
+            document.getElementById('status').innerText = `Found ${rawMatches.length} raw hits. Formatting...`;
+
+            // --- Step B: Concordance Display (Deduplicated) ---
+            let groupedConcordance = {};
+            
+            rawMatches.forEach(m => {
+                let lStr = m.leftToks.join(" ");
+                let rStr = m.rightToks.join(" ");
+                let uniqueKey = lStr + "|||" + rStr;
+                if (!groupedConcordance[uniqueKey]) {
+                    groupedConcordance[uniqueKey] = { left: lStr, right: rStr, count: 0 };
+                }
+                groupedConcordance[uniqueKey].count++;
+            });
+
+            let uniqueMatches = Object.values(groupedConcordance);
+            
+            // Render Concordance
+            let displayCount = uniqueMatches.length;
+            if (limitStr !== 'all') displayCount = Math.min(uniqueMatches.length, parseInt(limitStr));
+
+            let conRows = "";
+            for (let k = 0; k < displayCount; k++) {
+                let item = uniqueMatches[k];
+                let countBadge = item.count > 1 ? `<span class="count-badge">(${item.count} times)</span>` : "";
+                
+                conRows += `<tr>
+                    <td class="left-ctx">${item.left}</td>
+                    <td class="keyword">${processedQuery}</td>
+                    <td class="right-ctx">${item.right} ${countBadge}</td>
+                </tr>`;
+            }
+            if(uniqueMatches.length === 0) conRows = `<tr><td colspan="3" style="text-align:center">No matches found.</td></tr>`;
+            conTbody.innerHTML = conRows;
+
+            // --- Step C: Optimized Collocate Analysis ---
+            // Only look up to MAX_PHRASE_LEN (3)
+            // Filter < FREQ_THRESHOLD (20)
+
+            let patternCounts = {}; 
+
+            rawMatches.forEach(m => {
+                // 1. Right Side (1 to 3 words)
+                for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
+                    if (m.rightToks.length >= len) {
+                        let subPhrase = m.rightToks.slice(0, len).join(" ");
+                        let key = `Right +${len}||` + processedQuery + " " + subPhrase;
+                        patternCounts[key] = (patternCounts[key] || 0) + 1;
                     }
                 }
 
-                if (isMatch) {
-                    // Extract Tokens
-                    let startLeft = Math.max(0, i - 10);
-                    let leftTokens = corpusData.slice(startLeft, i);
-                    
-                    let endRight = Math.min(corpusData.length, i + queryLen + 10);
-                    let rightTokens = corpusData.slice(i + queryLen, endRight);
+                // 2. Left Side (1 to 3 words)
+                for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
+                    if (m.leftToks.length >= len) {
+                        // Get last 'len' tokens
+                        let subPhrase = m.leftToks.slice(m.leftToks.length - len).join(" ");
+                        let key = `Left +${len}||` + subPhrase + " " + processedQuery;
+                        patternCounts[key] = (patternCounts[key] || 0) + 1;
+                    }
+                }
+            });
 
-                    rawMatches.push({
-                        leftToks: leftTokens,
-                        keyStr: processedQuery,
-                        rightToks: rightTokens,
-                        fullIndex: i
+            // Convert to array and Filter
+            let sortedPatterns = [];
+            for (let key in patternCounts) {
+                if (patternCounts[key] >= FREQ_THRESHOLD) {
+                    let parts = key.split("||");
+                    sortedPatterns.push({
+                        type: parts[0],
+                        phrase: parts[1],
+                        count: patternCounts[key]
                     });
                 }
             }
-        }
 
-        document.getElementById('status').innerText = `Found ${rawMatches.length} raw hits. Processing...`;
+            // Sort purely by Frequency (Descending)
+            sortedPatterns.sort((a, b) => b.count - a.count);
 
-        // --- Step B: Deduplicate / Collate Concordance Lines ---
-        // We group by the visual string: "Left String | Right String"
-        let groupedConcordance = {};
-        
-        rawMatches.forEach(m => {
-            // Join tokens to make a unique string key
-            let lStr = m.leftToks.join(" ");
-            let rStr = m.rightToks.join(" ");
-            let uniqueKey = lStr + "|||" + rStr; // Separator
-
-            if (!groupedConcordance[uniqueKey]) {
-                groupedConcordance[uniqueKey] = {
-                    left: lStr,
-                    right: rStr,
-                    count: 0
-                };
-            }
-            groupedConcordance[uniqueKey].count++;
-        });
-
-        // Convert grouped object to array
-        let uniqueMatches = Object.values(groupedConcordance);
-        
-        // Display Concordance (Applied Limit)
-        let displayCount = uniqueMatches.length;
-        if (limitStr !== 'all') displayCount = Math.min(uniqueMatches.length, parseInt(limitStr));
-
-        for (let k = 0; k < displayCount; k++) {
-            let item = uniqueMatches[k];
-            let countBadge = item.count > 1 ? `<span class="count-badge">(${item.count} times)</span>` : "";
-            
-            let row = `<tr>
-                <td class="left-ctx">${item.left}</td>
-                <td class="keyword">${processedQuery}</td>
-                <td class="right-ctx">${item.right} ${countBadge}</td>
-            </tr>`;
-            conTbody.innerHTML += row;
-        }
-        
-        if(uniqueMatches.length === 0) conTbody.innerHTML = `<tr><td colspan="3" style="text-align:center">No matches found.</td></tr>`;
-
-        // --- Step C: Pattern / Collocate Analysis ---
-        // Logic: Scan rawMatches. Check 5 words right, 4 words right... then 5 words left, etc.
-        
-        let patternCounts = {}; // Key: "Type|Phrase", Value: Count
-
-        rawMatches.forEach(m => {
-            // 1. Right Side Analysis (Search + 5, Search + 4 ... Search + 1)
-            // m.rightToks contains up to 10 words. We only care about first 5.
-            for (let len = 5; len >= 1; len--) {
-                // Check if we actually have enough tokens
-                if (m.rightToks.length >= len) {
-                    let phraseTokens = m.rightToks.slice(0, len);
-                    let phrase = processedQuery + " " + phraseTokens.join(" "); // Search word + Context
-                    let type = `Right + ${len}`;
-                    let key = type + "||" + phrase;
-                    patternCounts[key] = (patternCounts[key] || 0) + 1;
-                }
-            }
-
-            // 2. Left Side Analysis (5 + Search ... 1 + Search)
-            // m.leftToks contains up to 10 words. We need the LAST 'len' words of that array.
-            for (let len = 5; len >= 1; len--) {
-                if (m.leftToks.length >= len) {
-                    // Get last 'len' tokens
-                    let phraseTokens = m.leftToks.slice(m.leftToks.length - len);
-                    let phrase = phraseTokens.join(" ") + " " + processedQuery; // Context + Search word
-                    let type = `Left + ${len}`;
-                    let key = type + "||" + phrase;
-                    patternCounts[key] = (patternCounts[key] || 0) + 1;
-                }
-            }
-        });
-
-        // Filter by Threshold and Sort
-        let sortedPatterns = [];
-        for (let key in patternCounts) {
-            if (patternCounts[key] >= thresholdInput) {
-                let parts = key.split("||");
-                sortedPatterns.push({
-                    type: parts[0],
-                    phrase: parts[1],
-                    count: patternCounts[key]
+            // Render Collocates
+            let colRows = "";
+            if (sortedPatterns.length === 0) {
+                colRows = `<tr><td colspan="3" style="text-align:center">No patterns found repeating ${FREQ_THRESHOLD} times or more.</td></tr>`;
+            } else {
+                sortedPatterns.forEach(p => {
+                    colRows += `<tr>
+                        <td class="col-len">${p.type}</td>
+                        <td class="col-phrase">${p.phrase}</td>
+                        <td class="col-count">${p.count}</td>
+                    </tr>`;
                 });
             }
-        }
-
-        // Sort: First by Pattern Type (Length 5 down to 1), then by frequency
-        // Helper to extract length from type string "Right + 5"
-        function getLen(str) { return parseInt(str.split('+')[1]); }
-        
-        sortedPatterns.sort((a, b) => {
-            let lenA = getLen(a.type);
-            let lenB = getLen(b.type);
-            if (lenA !== lenB) return lenB - lenA; // Descending Length (5 first)
-            return b.count - a.count; // Descending Frequency
-        });
-
-        // Render Collocates
-        if (sortedPatterns.length === 0) {
-            colTbody.innerHTML = `<tr><td colspan="3" style="text-align:center">No patterns found repeating ${thresholdInput} or more times.</td></tr>`;
-        } else {
-            sortedPatterns.forEach(p => {
-                let row = `<tr>
-                    <td class="col-len">${p.type}</td>
-                    <td class="col-phrase">${p.phrase}</td>
-                    <td class="col-count">${p.count}</td>
-                </tr>`;
-                colTbody.innerHTML += row;
-            });
-        }
+            colTbody.innerHTML = colRows;
+            
+            document.getElementById('status').innerText = `Done. Found ${rawMatches.length} raw hits.`;
+            
+        }, 50); // Small delay to prevent UI freeze
     }
 </script>
 
