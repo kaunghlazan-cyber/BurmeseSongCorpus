@@ -73,7 +73,7 @@
             // Clean up newlines to ensure continuous text
             let cleanText = text.replace(/[\r\n]+/g, ' '); 
             corpusData = cleanText.split(/\s+/); 
-            document.getElementById('status').innerText = "Corpus loaded (" + corpusData.length + " syllables). Ready to search.";
+            document.getElementById('status').innerText = "Corpus ထည့်သွင်းပြီး စာလုံးရေ (" + corpusData.length + " syllables). ရှာဖွေရန် အဆင်သင့်ဖြစ်ပါသည်။";
             document.getElementById('status').style.color = "green";
         })
         .catch(err => {
