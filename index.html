@@ -26,7 +26,7 @@
 </head>
 <body>
 
-    <h1>Burmese Concordance Tool</h1>
+    <h1>Burmese Song Lyrics Corpus Concordancer မြန်မာသီချင်းစာသား စကားလုံး ရှာစက်</h1>
 
     <div class="controls">
         <!-- Load Status -->
@@ -34,11 +34,11 @@
         <br>
         
         <!-- Search Inputs -->
-        <input type="text" id="searchInput" placeholder="Enter Burmese word (e.g., ကျောင်း)">
+        <input type="text" id="searchInput" placeholder="ရှာလိုသည့် မြန်မာစကားလုံး ရေးသွင်းပါ။​ (ဥပမာ- အချစ်)">
         <select id="limitSelect">
-            <option value="20">View 20 lines</option>
-            <option value="50">View 50 lines</option>
-            <option value="all">View All lines</option>
+            <option value="20">စာကြောင်း ၂၀ ကြည့်မည်</option>
+            <option value="50">စာကြောင်း ၅၀ ကြည့်မည်s</option>
+            <option value="all">ရှိတာအကုန်ကြည့်မည်။</option>
         </select>
         <button onclick="runSearch()">Search</button>
     </div>
@@ -47,9 +47,9 @@
     <table id="resultsTable">
         <thead>
             <tr>
-                <th style="text-align:right">Left Context</th>
-                <th style="text-align:center">Keyword</th>
-                <th style="text-align:left">Right Context</th>
+                <th style="text-align:right">ဝဲဘက်ရှိစကားလုံးများ </th>
+                <th style="text-align:center"> ရှာသည့်စကားလုံး </th>
+                <th style="text-align:left">ယာဘက်ရှိစကားလုံးများ</th>
             </tr>
         </thead>
         <tbody id="resultsBody">
