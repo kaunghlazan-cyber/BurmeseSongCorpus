@@ -202,9 +202,11 @@
     // 2. UPDATED HELPER: Format Metadata
     function getMetaString(metaObj) {
         // Try to find common keys, or fallback to "Unknown"
-        let title = metaObj.title || metaObj.name || metaObj.song || "Unknown Title";
-        let voc = metaObj.vocalist || metaObj.singer || metaObj.artist || "Unknown";
-        let comp = metaObj.composer || metaObj.songwriter || "Unknown";
+        let comp = metaObj.composer|| "Unknown";
+        let voc = metaObj.vocalist || "Unknown";
+        let title = metaObj.title || "Unknown Title";
+        
+        
         
         return `
             <strong style="color:#009879; font-size:1.05em;">${title}</strong>
