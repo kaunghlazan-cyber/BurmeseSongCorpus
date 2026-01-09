@@ -39,13 +39,11 @@
         tr:nth-child(even) { background-color: #f9f9f9; }
 
         /* --- Updated Column Widths --- */
-        /* Slightly wider column for Song Info */
         .col-meta { width: 22%; color: #444; font-size: 0.85em; background: #fafafa; border-right: 1px solid #eee; line-height: 1.4em; }
         .col-left { text-align: right; width: 29%; color: #555; }
         .col-kwic { text-align: center; width: 15%; font-weight: bold; color: #d9534f; background: #fff0f0; white-space: nowrap; }
         .col-right { text-align: left; width: 29%; color: #555; }
         
-        /* Badges for Artist/Composer */
         .meta-tag { display: block; margin-top: 2px; color: #666; font-size: 0.9em; }
         .meta-icon { opacity: 0.6; margin-right: 4px; }
 
@@ -88,7 +86,6 @@
     <table id="resultsTable">
         <thead>
             <tr>
-                <!-- Updated Header -->
                 <th class="col-meta">Song Details</th>
                 <th class="col-left">Left Context</th>
                 <th class="col-kwic">Keyword</th>
@@ -114,6 +111,7 @@
     <div class="credit">
         <p>Syllable breaking logic adapted from <a href="https://github.com/ye-kyaw-thu/sylbreak" target="_blank">ye-kyaw-thu/sylbreak</a>.</p>
     </div>
+
 <script>
     // ==========================================
     // DATA CONFIGURATION
@@ -127,24 +125,15 @@
 
     // 1. Load JSON Corpus
     fetch('corpus.json')
-        .then(response => {
-            if (!response.ok) {
-                // If fetching fails, provide a specific error message
-                throw new Error(`Failed to load corpus.json. Status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(jsonData => {
             
             if (!Array.isArray(jsonData)) {
                 alert("Error: corpus.json is not a list (Array). It should start with '[' and end with ']'.");
-                document.getElementById('status').innerText = "Error: corpus.json is not an array.";
-                document.getElementById('status').style.color = "red";
                 return;
             }
             if (jsonData.length === 0) {
-                document.getElementById('status').innerText = "Error: corpus.json is empty.";
-                document.getElementById('status').style.color = "red";
+                alert("Error: corpus.json is empty.");
                 return;
             }
 
@@ -153,32 +142,21 @@
             let lyricsKey = "";
             let maxLength = 0;
 
-            // Iterate over common potential keys for lyrics
-            const potentialLyricsKeys = ['text', 'lyrics', 'body', 'content', 'words', 'fulltext', 'myanmar'];
-            for (let key of potentialLyricsKeys) {
+            for (let key in firstItem) {
                 if (typeof firstItem[key] === 'string' && firstItem[key].length > maxLength) {
                     maxLength = firstItem[key].length;
                     lyricsKey = key;
                 }
             }
-            
-            // If still not found, try any other string key
-            if (!lyricsKey) {
-                for (let key in firstItem) {
-                    if (typeof firstItem[key] === 'string' && firstItem[key].length > maxLength) {
-                        maxLength = firstItem[key].length;
-                        lyricsKey = key;
-                    }
-                }
-            }
 
             if (!lyricsKey) {
-                document.getElementById('status').innerText = "Error: Could not find any text fields for lyrics in corpus.json";
+                document.getElementById('status').innerText = "Error: Could not find any suitable text fields (lyrics) in corpus.json";
                 document.getElementById('status').style.color = "red";
                 return;
             }
 
-            console.log("Auto-detected lyrics field:", lyricsKey); // This will show in your browser's console
+            console.log("Auto-detected lyrics field:", lyricsKey); // Important for debugging
+            console.log("Example first JSON entry (for metadata check):", firstItem); // More debugging info
 
             let currentIndex = 0;
             
@@ -195,45 +173,40 @@
                     sourceMap.push({
                         start: start,
                         end: end,
-                        meta: entry // Store the whole JSON object
+                        meta: entry // Store the whole JSON object for metadata
                     });
 
                     globalCorpus = globalCorpus.concat(tokens);
                     currentIndex += tokens.length;
-                    globalCorpus.push("###EOF###"); // Add a 'wall'
+                    globalCorpus.push("###EOF###");
                     currentIndex++;
                 }
             });
 
-            document.getElementById('status').innerText = `Loaded ${sourceMap.length} songs (${globalCorpus.length.toLocaleString()} syllables). Detected lyrics in field: "${lyricsKey}"`;
+            document.getElementById('status').innerText = `Loaded ${sourceMap.length} songs (${globalCorpus.length.toLocaleString()} syllables). Lyrics found in field: "${lyricsKey}"`;
             document.getElementById('status').style.color = "green";
         })
         .catch(err => {
-            console.error("Error loading or parsing corpus.json:", err);
-            document.getElementById('status').innerText = "Error: " + err.message + ". See browser console for details.";
+            console.error("Failed to load or parse corpus.json:", err);
+            document.getElementById('status').innerText = "Error loading corpus.json. Check console for details.";
             document.getElementById('status').style.color = "red";
         });
 
-    // 2. UPDATED HELPER: Format Metadata
+    // 2. UPDATED HELPER: Format Metadata specifically for your JSON
     function getMetaString(metaObj) {
-        // --- CRUCIAL DEBUG STEP ---
-        // Open your browser's developer console (F12) and check what this logs:
-        console.log("Metadata Object received by getMetaString:", metaObj);
-
-        // Try to find common keys, prioritize user's specified keys with case variations
-        let title = metaObj.title || metaObj.Title || metaObj.name || metaObj.song || "Unknown Title";
-        let voc = metaObj.vocalist || metaObj.Vocalist || metaObj.singer || metaObj.artist || metaObj.Artist || "Unknown";
-        let comp = metaObj.composer || metaObj.Composer || metaObj.songwriter || "Unknown";
+        // Direct access to the keys provided by the user
+        // Use a fallback to "Unknown" if the key doesn't exist or is empty
+        const title = metaObj.title || "Unknown Title";
+        const vocalist = metaObj.vocalist || "Unknown";
+        const composer = metaObj.composer || "Unknown";
         
-        // Handle cases where the value might be an empty string, converting it to "Unknown"
-        if (title.trim() === "") title = "Unknown Title";
-        if (voc.trim() === "") voc = "Unknown";
-        if (comp.trim() === "") comp = "Unknown";
+        // Log the object being processed if still getting "Unknown"
+        // console.log("Processing meta object for display:", metaObj);
 
         return `
             <strong style="color:#009879; font-size:1.05em;">${title}</strong>
-            <span class="meta-tag"><span class="meta-icon">🎤</span> ${voc}</span>
-            <span class="meta-tag"><span class="meta-icon">🎼</span> ${comp}</span>
+            <span class="meta-tag"><span class="meta-icon">🎤</span> ${vocalist}</span>
+            <span class="meta-tag"><span class="meta-icon">🎼</span> ${composer}</span>
         `;
     }
 
@@ -252,7 +225,7 @@
                 return getMetaString(item.meta);
             }
         }
-        return "Unknown Source";
+        return "Unknown Source (Error)"; // Should not happen if sourceMap is built correctly
     }
 
     // 5. MAIN SEARCH LOGIC
@@ -265,7 +238,11 @@
         conTbody.innerHTML = "";
         colTbody.innerHTML = "";
 
-        if(!rawInput) return;
+        if(!rawInput) {
+            document.getElementById('status').innerText = "Please enter a search word.";
+            document.getElementById('status').style.color = "#888";
+            return;
+        }
         document.getElementById('status').innerText = "Searching...";
 
         setTimeout(() => {
@@ -281,7 +258,8 @@
                 if (globalCorpus[i] === firstToken) {
                     let isMatch = true;
                     for(let j = 0; j < qLen; j++) {
-                        if(globalCorpus[i + j] !== queryTokens[j]) {
+                        // Ensure we don't go out of bounds or cross an ###EOF### wall
+                        if(i + j >= globalCorpus.length || globalCorpus[i + j] === "###EOF###" || globalCorpus[i + j] !== queryTokens[j]) {
                             isMatch = false; break;
                         }
                     }
@@ -290,20 +268,41 @@
                         let metaHtml = getSourceInfo(i);
 
                         let startLeft = Math.max(0, i - 10);
-                        let leftCtx = globalCorpus.slice(startLeft, i).join(" ");
-                        let endRight = Math.min(globalCorpus.length, i + qLen + 10);
-                        let rightCtx = globalCorpus.slice(i + qLen, endRight).join(" ");
+                        let leftCtxTokens = [];
+                        for (let k = startLeft; k < i; k++) {
+                            if (globalCorpus[k] === "###EOF###") break; // Stop at document boundary
+                            leftCtxTokens.push(globalCorpus[k]);
+                        }
+                        let leftCtx = leftCtxTokens.join(" ");
 
-                        let rawLeft = globalCorpus.slice(Math.max(0, i - MAX_PHRASE_LEN), i);
-                        let rawRight = globalCorpus.slice(i + qLen, Math.min(globalCorpus.length, i + qLen + MAX_PHRASE_LEN));
+                        let endRight = Math.min(globalCorpus.length, i + qLen + 10);
+                        let rightCtxTokens = [];
+                        for (let k = i + qLen; k < endRight; k++) {
+                            if (globalCorpus[k] === "###EOF###") break; // Stop at document boundary
+                            rightCtxTokens.push(globalCorpus[k]);
+                        }
+                        let rightCtx = rightCtxTokens.join(" ");
+
+                        // Raw tokens for collocate analysis, also respecting ###EOF###
+                        let rawLeftTokens = [];
+                        for (let k = Math.max(0, i - MAX_PHRASE_LEN); k < i; k++) {
+                            if (globalCorpus[k] === "###EOF###") rawLeftTokens = []; // Clear if we hit a boundary
+                            else rawLeftTokens.push(globalCorpus[k]);
+                        }
+
+                        let rawRightTokens = [];
+                        for (let k = i + qLen; k < Math.min(globalCorpus.length, i + qLen + MAX_PHRASE_LEN); k++) {
+                            if (globalCorpus[k] === "###EOF###") break; // Stop at document boundary
+                            rawRightTokens.push(globalCorpus[k]);
+                        }
 
                         matches.push({
                             meta: metaHtml,
                             left: leftCtx,
                             keyword: processedQuery,
                             right: rightCtx,
-                            rawLeft: rawLeft,
-                            rawRight: rawRight
+                            rawLeft: rawLeftTokens, // Use the boundary-aware tokens
+                            rawRight: rawRightTokens
                         });
                     }
                 }
@@ -334,7 +333,6 @@
                 for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
                     if (m.rawRight.length >= len) {
                         let sub = m.rawRight.slice(0, len).join(" ");
-                        if(sub.includes("###EOF###")) continue;
                         let key = `Right +${len}||` + processedQuery + " " + sub;
                         patternCounts[key] = (patternCounts[key] || 0) + 1;
                     }
@@ -342,7 +340,6 @@
                 for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
                     if (m.rawLeft.length >= len) {
                         let sub = m.rawLeft.slice(m.rawLeft.length - len).join(" ");
-                        if(sub.includes("###EOF###")) continue;
                         let key = `Left +${len}||` + sub + " " + processedQuery;
                         patternCounts[key] = (patternCounts[key] || 0) + 1;
                     }
@@ -376,8 +373,6 @@
         }, 50);
     }
 </script>
-    
-
 
 </body>
 </html>
