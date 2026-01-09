@@ -127,45 +127,62 @@
 
     // 1. Load JSON Corpus
     fetch('corpus.json')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                // If fetching fails, provide a specific error message
+                throw new Error(`Failed to load corpus.json. Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(jsonData => {
             
-            // SECURITY CHECK: Is the JSON valid?
             if (!Array.isArray(jsonData)) {
                 alert("Error: corpus.json is not a list (Array). It should start with '[' and end with ']'.");
+                document.getElementById('status').innerText = "Error: corpus.json is not an array.";
+                document.getElementById('status').style.color = "red";
                 return;
             }
             if (jsonData.length === 0) {
-                alert("Error: corpus.json is empty.");
+                document.getElementById('status').innerText = "Error: corpus.json is empty.";
+                document.getElementById('status').style.color = "red";
                 return;
             }
 
             // SMART DETECTION: Find which key contains the lyrics
-            // We look at the first item and find the field with the longest text.
             let firstItem = jsonData[0];
             let lyricsKey = "";
             let maxLength = 0;
 
-            for (let key in firstItem) {
+            // Iterate over common potential keys for lyrics
+            const potentialLyricsKeys = ['text', 'lyrics', 'body', 'content', 'words', 'fulltext', 'myanmar'];
+            for (let key of potentialLyricsKeys) {
                 if (typeof firstItem[key] === 'string' && firstItem[key].length > maxLength) {
                     maxLength = firstItem[key].length;
                     lyricsKey = key;
                 }
             }
+            
+            // If still not found, try any other string key
+            if (!lyricsKey) {
+                for (let key in firstItem) {
+                    if (typeof firstItem[key] === 'string' && firstItem[key].length > maxLength) {
+                        maxLength = firstItem[key].length;
+                        lyricsKey = key;
+                    }
+                }
+            }
 
             if (!lyricsKey) {
-                document.getElementById('status').innerText = "Error: Could not find any text fields in corpus.json";
+                document.getElementById('status').innerText = "Error: Could not find any text fields for lyrics in corpus.json";
                 document.getElementById('status').style.color = "red";
                 return;
             }
 
-            console.log("Auto-detected lyrics field:", lyricsKey); // Check Console if in doubt
+            console.log("Auto-detected lyrics field:", lyricsKey); // This will show in your browser's console
 
-            // PROCESS DATA
             let currentIndex = 0;
             
             jsonData.forEach(entry => {
-                // Use the auto-detected key
                 let rawText = entry[lyricsKey] || "";
                 
                 if (rawText) {
@@ -183,9 +200,7 @@
 
                     globalCorpus = globalCorpus.concat(tokens);
                     currentIndex += tokens.length;
-                    
-                    // Add wall between songs
-                    globalCorpus.push("###EOF###");
+                    globalCorpus.push("###EOF###"); // Add a 'wall'
                     currentIndex++;
                 }
             });
@@ -194,20 +209,27 @@
             document.getElementById('status').style.color = "green";
         })
         .catch(err => {
-            console.error(err);
-            document.getElementById('status').innerText = "Error: " + err.message;
+            console.error("Error loading or parsing corpus.json:", err);
+            document.getElementById('status').innerText = "Error: " + err.message + ". See browser console for details.";
             document.getElementById('status').style.color = "red";
         });
 
     // 2. UPDATED HELPER: Format Metadata
     function getMetaString(metaObj) {
-        // Try to find common keys, or fallback to "Unknown"
-        let comp = metaObj.composer|| "Unknown";
-        let voc = metaObj.vocalist || "Unknown";
-        let title = metaObj.title || "Unknown Title";
+        // --- CRUCIAL DEBUG STEP ---
+        // Open your browser's developer console (F12) and check what this logs:
+        console.log("Metadata Object received by getMetaString:", metaObj);
+
+        // Try to find common keys, prioritize user's specified keys with case variations
+        let title = metaObj.title || metaObj.Title || metaObj.name || metaObj.song || "Unknown Title";
+        let voc = metaObj.vocalist || metaObj.Vocalist || metaObj.singer || metaObj.artist || metaObj.Artist || "Unknown";
+        let comp = metaObj.composer || metaObj.Composer || metaObj.songwriter || "Unknown";
         
-        
-        
+        // Handle cases where the value might be an empty string, converting it to "Unknown"
+        if (title.trim() === "") title = "Unknown Title";
+        if (voc.trim() === "") voc = "Unknown";
+        if (comp.trim() === "") comp = "Unknown";
+
         return `
             <strong style="color:#009879; font-size:1.05em;">${title}</strong>
             <span class="meta-tag"><span class="meta-icon">🎤</span> ${voc}</span>
@@ -354,6 +376,7 @@
         }, 50);
     }
 </script>
+    
 
 
 </body>
