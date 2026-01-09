@@ -3,156 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burmese Song Lyrics Corpus Concordance</title>
+    <title>Burmese JSON Concordancer</title>
     <style>
-        /* --- Modern & Clean Visuals --- */
+        /* --- Visual Styles --- */
         body { 
             font-family: "Pyidaungsu", "Myanmar3", "Segoe UI", sans-serif; 
-            padding: 40px; 
-            background-color: #f8f9fa; 
-            color: #333;
-            max-width: 1200px; 
+            padding: 40px; background-color: #f8f9fa; color: #333;
+            max-width: 1400px; /* Wider to fit metadata */
             margin: 0 auto; 
         }
 
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
 
-        /* Search Box Area */
         .controls { 
-            background: #ffffff; padding: 25px; border-radius: 12px; 
+            background: #ffffff; padding: 20px; border-radius: 12px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; margin-bottom: 30px;
         }
-
-        .input-group { margin: 10px; display: inline-block; vertical-align: top; }
+        .input-group { margin: 10px; display: inline-block; vertical-align: bottom; }
         label { font-size: 0.85em; color: #666; display: block; margin-bottom: 5px; text-align: left; font-weight: bold; }
-
-        input[type="text"] { 
-            padding: 12px; width: 300px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; 
-        }
-
-        select { padding: 12px; border-radius: 6px; border: 1px solid #ddd; background: white; }
-
-        .static-info {
-            padding: 12px; background: #e9ecef; border-radius: 6px; color: #555; font-size: 14px; display: inline-block;
-        }
-
+        input[type="text"] { padding: 10px; width: 250px; border: 1px solid #ddd; border-radius: 6px; }
+        select { padding: 10px; border-radius: 6px; border: 1px solid #ddd; background: white; }
+        
         button { 
-            padding: 12px 25px; background-color: #009879; color: white; border: none; 
-            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; 
-            transition: background 0.3s; margin-top: 22px; /* Align with inputs */
+            padding: 10px 20px; background-color: #009879; color: white; border: none; 
+            border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.3s;
         }
         button:hover { background-color: #007f65; }
 
-        /* Sections */
-        .section-title {
-            margin-top: 40px; margin-bottom: 15px; font-size: 1.4em; color: #009879; border-bottom: 2px solid #ddd; padding-bottom: 10px;
-        }
-
         /* Tables */
+        .section-title { margin-top: 40px; margin-bottom: 10px; font-size: 1.3em; color: #009879; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+        
         table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; margin-bottom: 20px; table-layout: fixed; }
-        th { background-color: #009879; color: #ffffff; padding: 15px; text-align: left; font-size: 0.9em; }
-        td { padding: 10px 15px; border-bottom: 1px solid #eee; line-height: 1.6; word-wrap: break-word; }
+        th { background-color: #009879; color: #ffffff; padding: 12px; text-align: left; font-size: 0.9em; }
+        td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 0.95em; word-wrap: break-word; }
         tr:nth-child(even) { background-color: #f9f9f9; }
 
-        /* Concordance Specifics */
-        .left-ctx { text-align: right; width: 40%; color: #555; }
-        .keyword { text-align: center; width: 20%; font-weight: bold; color: #d9534f; background: #fff0f0; white-space: nowrap; }
-        .right-ctx { text-align: left; width: 40%; color: #555; }
-        .count-badge { font-size: 0.8em; background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 5px; white-space: nowrap; display: inline-block;}
-
-        /* Collocate Specifics */
+        /* Concordance Columns - Adjusted for Metadata */
+        .col-meta { width: 20%; color: #444; font-size: 0.85em; background: #fafafa; border-right: 1px solid #eee; }
+        .col-left { text-align: right; width: 30%; color: #555; }
+        .col-kwic { text-align: center; width: 15%; font-weight: bold; color: #d9534f; background: #fff0f0; white-space: nowrap; }
+        .col-right { text-align: left; width: 30%; color: #555; }
+        
+        /* Collocate Table */
         .col-len { width: 15%; font-weight: bold; color: #555; }
         .col-phrase { width: 65%; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
         .col-count { width: 20%; text-align: right; font-weight: bold; color: #009879; }
 
-        #status { font-weight: 500; margin-bottom: 10px; }
-        .credit { margin-top: 50px; text-align: center; color: #aaa; font-size: 0.9em; }
+        #status { font-weight: 500; margin-bottom: 10px; font-size: 0.9em; }
+        .credit { margin-top: 50px; text-align: center; color: #aaa; font-size: 0.8em; }
         .credit a { color: #aaa; text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <h1> မြန်မာသီချင်းစာသား စကားလုံး ရှာစက် Burmese Song Lyrics Concordancer</h1>
+    <h1>Burmese Lyrics Concordancer</h1>
 
     <div class="controls">
-        <div id="status">Loading corpus.txt...</div>
+        <div id="status">Loading corpus.json...</div>
         
         <div class="input-group">
-            <label>ရှာလိုသည့် စကားလုံး</label>
+            <label>Search Word</label>
             <input type="text" id="searchInput" placeholder="e.g., အချစ်">
         </div>
 
         <div class="input-group">
-            <label>ပြသရန် စာကြောင်းအရေအတွက်</label>
+            <label>Concordance Limit</label>
             <select id="limitSelect">
-                <option value="20">၂၀ ကြည့်မည်</option>
-                <option value="50">၅၀ ကြည့်မည်</option>
-                <option value="all">အကုန်ကြည့်မည် (စက်လေးတတ်သည်)</option>
+                <option value="20">Show 20</option>
+                <option value="50">Show 50</option>
+                <option value="all">Show All</option>
             </select>
         </div>
 
-        <!-- Fixed settings to prevent crashing -->
-        <div class="input-group">
-            <label>စကားစု အရေအတွက်</label>
-            <div class="static-info">ဝဲယာ သုံးလုံးအထိပြမည်။ အနည်းဆုံး ကြိမ်ရေ ၂၀။​ </div>
-        </div>
-
-        <button onclick="runSearch()">ရှာမည်။</button>
+        <button onclick="runSearch()">Search</button>
     </div>
 
-    <!-- 1. Concordance Section -->
-    <div class="section-title"> ရှာသည့်စကားလုံးပါ စာကြောင်းများ (KWIC)</div>
+    <!-- MAIN CONCORDANCE TABLE -->
+    <div class="section-title">Concordance Lines</div>
     <table id="resultsTable">
         <thead>
             <tr>
-                <th style="text-align:right; width:40%;">ဝဲဘက်မှ စကားလုံးများ </th>
-                <th style="text-align:center; width:20%;"> ဦးတည် စကားလုံး </th>
-                <th style="text-align:left; width:40%;">ယာဘက်မှ စကားလုံးများ</th>
+                <!-- New Column for Attributes -->
+                <th class="col-meta">Source Attributes</th>
+                <th class="col-left">Left Context</th>
+                <th class="col-kwic">Keyword</th>
+                <th class="col-right">Right Context</th>
             </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
     </table>
 
-    <!-- 2. Collocates Section -->
-    <div class="section-title"> အသုံးကြိမ်ရေမြင့် စကားစုများ</div>
-    <p style="font-size:0.9em; color:#666;"> အောက်တွင်ပြသည့်စကားစုများမှာ  <strong> အကြိမ် ၂၀ </strong> နှင့်အထက် တွေ့ရသည့် ဝဲယာ စကားလုံး သုံးလုံးအထိ ပါသည့် စကားစုများကို ပြထားခြင်းဖြစ်သည်။ </p>
-    
+    <!-- COLLOCATE TABLE -->
+    <div class="section-title">Common Phrases (Frequency > 20)</div>
     <table id="collocateTable">
         <thead>
             <tr>
-                <th>စကားစုတည်ဆောက်ပုံ </th>
-                <th>တွေ့ရသည့် စကားစု</th>
-                <th style="text-align:right">အကြိမ်ရေ</th>
+                <th>Pattern Type</th>
+                <th>Phrase Found</th>
+                <th style="text-align:right">Frequency</th>
             </tr>
         </thead>
         <tbody id="collocateBody"></tbody>
     </table>
 
     <div class="credit">
-        <p>Syllable ခွဲသည့်ကုတ်ကို ဆရာရဲကျော်သူ၏ <a href="https://github.com/ye-kyaw-thu/sylbreak" target="_blank">ye-kyaw-thu/sylbreak</a> မှ ရယူထားပါသည်။</p>
+        <p>Syllable breaking logic adapted from <a href="https://github.com/ye-kyaw-thu/sylbreak" target="_blank">ye-kyaw-thu/sylbreak</a>.</p>
     </div>
 
 <script>
-    let corpusData = []; 
-    // Hardcoded constraints to prevent crashing
+    // ==========================================
+    // DATA CONFIGURATION
+    // ==========================================
+    let globalCorpus = []; 
+    let sourceMap = []; // Maps index ranges to Metadata objects
+
+    // Hardcoded constraints for stability
     const FREQ_THRESHOLD = 20; 
     const MAX_PHRASE_LEN = 3; 
 
-    // 1. Load Corpus
-    fetch('corpus.txt')
-        .then(response => response.text())
-        .then(text => {
-            let cleanText = text.replace(/[\r\n]+/g, ' '); 
-            corpusData = cleanText.split(/\s+/); 
-            document.getElementById('status').innerText = "Corpus loaded (" + corpusData.length.toLocaleString() + " syllables).";
+    // 1. Load JSON Corpus
+    fetch('corpus.json')
+        .then(response => response.json())
+        .then(jsonData => {
+            let currentIndex = 0;
+            
+            // Iterate over every song/entry in the JSON
+            jsonData.forEach(entry => {
+                // Assume entry.text contains the syllable broken string
+                // Clean newlines just in case
+                let cleanText = entry.text.replace(/[\r\n]+/g, ' ');
+                let tokens = cleanText.split(/\s+/).filter(t => t.length > 0);
+                
+                // Record the range for this specific song
+                let start = currentIndex;
+                let end = currentIndex + tokens.length - 1;
+                
+                sourceMap.push({
+                    start: start,
+                    end: end,
+                    meta: entry // Store the whole object (title, artist, etc)
+                });
+
+                // Add to the master search array
+                globalCorpus = globalCorpus.concat(tokens);
+                currentIndex += tokens.length;
+
+                // Add a "Wall" so searches don't bleed from Song A into Song B
+                globalCorpus.push("###EOF###");
+                currentIndex++;
+            });
+
+            document.getElementById('status').innerText = `Loaded ${sourceMap.length} documents (${globalCorpus.length.toLocaleString()} syllables).`;
             document.getElementById('status').style.color = "green";
         })
         .catch(err => {
-            document.getElementById('status').innerText = "Error loading corpus.txt";
+            console.error(err);
+            document.getElementById('status').innerText = "Error loading 'corpus.json'. Check format.";
             document.getElementById('status').style.color = "red";
         });
 
-    // 2. Syllable Breaker
+    // 2. HELPER: Format Metadata for Display
+    // CHANGE THIS FUNCTION to match your JSON keys!
+    function getMetaString(metaObj) {
+        // Example: returns "Song Title (Artist)"
+        // If your JSON has "year", you can add that too.
+        let title = metaObj.title || "Unknown Title";
+        let artist = metaObj.artist ? ` (${metaObj.artist})` : "";
+        return `<strong>${title}</strong>${artist}`;
+    }
+
+    // 3. HELPER: Syllable Breaker (for search input)
     function sylBreak(text) {
         const myanmarConsonant = "[\u1000-\u1021]";
         let re = new RegExp("((?<!^|\\s)" + myanmarConsonant + "(?![\\u1037\\u1039\\u103A]))", "g");
@@ -160,140 +180,132 @@
         return broken.replace(/\s+/g, ' ').trim();
     }
 
-    // 3. Search Logic
+    // 4. HELPER: Find Metadata by Index
+    function getSourceInfo(index) {
+        // Simple loop to find which song range this index falls into
+        for(let item of sourceMap) {
+            if(index >= item.start && index <= item.end) {
+                return getMetaString(item.meta);
+            }
+        }
+        return "Unknown Source";
+    }
+
+    // 5. MAIN SEARCH LOGIC
     function runSearch() {
         const rawInput = document.getElementById('searchInput').value.trim();
         const limitStr = document.getElementById('limitSelect').value;
-        
         const conTbody = document.getElementById('resultsBody');
         const colTbody = document.getElementById('collocateBody');
+        
         conTbody.innerHTML = "";
         colTbody.innerHTML = "";
 
         if(!rawInput) return;
+        document.getElementById('status').innerText = "Searching...";
 
-        document.getElementById('status').innerText = "Processing...";
-
-        // Use setTimeout to allow UI to update before heavy processing
         setTimeout(() => {
-            // Process Query
             const processedQuery = sylBreak(rawInput);
             const queryTokens = processedQuery.split(" ");
             const firstToken = queryTokens[0];
-            const queryLen = queryTokens.length;
+            const qLen = queryTokens.length;
 
-            // --- Step A: Find matches ---
-            let rawMatches = [];
+            // --- Step A: Find Matches ---
+            let matches = [];
 
-            for (let i = 0; i < corpusData.length; i++) {
-                if (corpusData[i] === firstToken) {
+            for (let i = 0; i < globalCorpus.length; i++) {
+                if (globalCorpus[i] === firstToken) {
                     let isMatch = true;
-                    for(let j = 0; j < queryLen; j++) {
-                        if(corpusData[i + j] !== queryTokens[j]) {
+                    for(let j = 0; j < qLen; j++) {
+                        if(globalCorpus[i + j] !== queryTokens[j]) {
                             isMatch = false; break;
                         }
                     }
 
                     if (isMatch) {
-                        // Extract Tokens (10 for display, but we only calculate stats on 3)
-                        let startLeft = Math.max(0, i - 10);
-                        let leftTokens = corpusData.slice(startLeft, i);
-                        
-                        let endRight = Math.min(corpusData.length, i + queryLen + 10);
-                        let rightTokens = corpusData.slice(i + queryLen, endRight);
+                        // Identify Source
+                        let metaHtml = getSourceInfo(i);
 
-                        rawMatches.push({
-                            leftToks: leftTokens,
-                            rightToks: rightTokens
+                        // Context
+                        let startLeft = Math.max(0, i - 10);
+                        let leftCtx = globalCorpus.slice(startLeft, i).join(" ");
+                        let endRight = Math.min(globalCorpus.length, i + qLen + 10);
+                        let rightCtx = globalCorpus.slice(i + qLen, endRight).join(" ");
+
+                        // Raw tokens for stats
+                        let rawLeft = globalCorpus.slice(Math.max(0, i - MAX_PHRASE_LEN), i);
+                        let rawRight = globalCorpus.slice(i + qLen, Math.min(globalCorpus.length, i + qLen + MAX_PHRASE_LEN));
+
+                        matches.push({
+                            meta: metaHtml,
+                            left: leftCtx,
+                            keyword: processedQuery,
+                            right: rightCtx,
+                            rawLeft: rawLeft,
+                            rawRight: rawRight
                         });
                     }
                 }
             }
 
-            document.getElementById('status').innerText = `Found ${rawMatches.length} raw hits. Formatting...`;
+            document.getElementById('status').innerText = `Found ${matches.length} hits. Rendering...`;
 
-            // --- Step B: Concordance Display (Deduplicated) ---
-            let groupedConcordance = {};
+            // --- Step B: Render Concordance ---
+            let displayCount = (limitStr === 'all') ? matches.length : parseInt(limitStr);
+            let displayMatches = matches.slice(0, Math.min(matches.length, displayCount));
             
-            rawMatches.forEach(m => {
-                let lStr = m.leftToks.join(" ");
-                let rStr = m.rightToks.join(" ");
-                let uniqueKey = lStr + "|||" + rStr;
-                if (!groupedConcordance[uniqueKey]) {
-                    groupedConcordance[uniqueKey] = { left: lStr, right: rStr, count: 0 };
-                }
-                groupedConcordance[uniqueKey].count++;
-            });
-
-            let uniqueMatches = Object.values(groupedConcordance);
-            
-            // Render Concordance
-            let displayCount = uniqueMatches.length;
-            if (limitStr !== 'all') displayCount = Math.min(uniqueMatches.length, parseInt(limitStr));
-
             let conRows = "";
-            for (let k = 0; k < displayCount; k++) {
-                let item = uniqueMatches[k];
-                let countBadge = item.count > 1 ? `<span class="count-badge">(${item.count} times)</span>` : "";
-                
+            displayMatches.forEach(m => {
                 conRows += `<tr>
-                    <td class="left-ctx">${item.left}</td>
-                    <td class="keyword">${processedQuery}</td>
-                    <td class="right-ctx">${item.right} ${countBadge}</td>
+                    <td class="col-meta">${m.meta}</td>
+                    <td class="col-left">${m.left}</td>
+                    <td class="col-kwic">${m.keyword}</td>
+                    <td class="col-right">${m.right}</td>
                 </tr>`;
-            }
-            if(uniqueMatches.length === 0) conRows = `<tr><td colspan="3" style="text-align:center">No matches found.</td></tr>`;
+            });
+            if(matches.length === 0) conRows = `<tr><td colspan="4" style="text-align:center">No matches found.</td></tr>`;
             conTbody.innerHTML = conRows;
 
-            // --- Step C: Optimized Collocate Analysis ---
-            // Only look up to MAX_PHRASE_LEN (3)
-            // Filter < FREQ_THRESHOLD (20)
+            // --- Step C: Collocate Analysis (Optimized) ---
+            let patternCounts = {};
 
-            let patternCounts = {}; 
-
-            rawMatches.forEach(m => {
-                // 1. Right Side (1 to 3 words)
+            matches.forEach(m => {
+                // Right Side
                 for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
-                    if (m.rightToks.length >= len) {
-                        let subPhrase = m.rightToks.slice(0, len).join(" ");
-                        let key = `Right +${len}||` + processedQuery + " " + subPhrase;
+                    if (m.rawRight.length >= len) {
+                        let sub = m.rawRight.slice(0, len).join(" ");
+                        if(sub.includes("###EOF###")) continue;
+                        let key = `Right +${len}||` + processedQuery + " " + sub;
                         patternCounts[key] = (patternCounts[key] || 0) + 1;
                     }
                 }
-
-                // 2. Left Side (1 to 3 words)
+                // Left Side
                 for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
-                    if (m.leftToks.length >= len) {
-                        // Get last 'len' tokens
-                        let subPhrase = m.leftToks.slice(m.leftToks.length - len).join(" ");
-                        let key = `Left +${len}||` + subPhrase + " " + processedQuery;
+                    if (m.rawLeft.length >= len) {
+                        let sub = m.rawLeft.slice(m.rawLeft.length - len).join(" ");
+                        if(sub.includes("###EOF###")) continue;
+                        let key = `Left +${len}||` + sub + " " + processedQuery;
                         patternCounts[key] = (patternCounts[key] || 0) + 1;
                     }
                 }
             });
 
-            // Convert to array and Filter
-            let sortedPatterns = [];
+            // Sort & Filter
+            let sorted = [];
             for (let key in patternCounts) {
                 if (patternCounts[key] >= FREQ_THRESHOLD) {
                     let parts = key.split("||");
-                    sortedPatterns.push({
-                        type: parts[0],
-                        phrase: parts[1],
-                        count: patternCounts[key]
-                    });
+                    sorted.push({ type: parts[0], phrase: parts[1], count: patternCounts[key] });
                 }
             }
-
-            // Sort purely by Frequency (Descending)
-            sortedPatterns.sort((a, b) => b.count - a.count);
+            sorted.sort((a, b) => b.count - a.count);
 
             // Render Collocates
             let colRows = "";
-            if (sortedPatterns.length === 0) {
-                colRows = `<tr><td colspan="3" style="text-align:center">No patterns found repeating ${FREQ_THRESHOLD} times or more.</td></tr>`;
+            if (sorted.length === 0) {
+                colRows = `<tr><td colspan="3" style="text-align:center">No patterns found > ${FREQ_THRESHOLD} times.</td></tr>`;
             } else {
-                sortedPatterns.forEach(p => {
+                sorted.forEach(p => {
                     colRows += `<tr>
                         <td class="col-len">${p.type}</td>
                         <td class="col-phrase">${p.phrase}</td>
@@ -302,10 +314,9 @@
                 });
             }
             colTbody.innerHTML = colRows;
-            
-            document.getElementById('status').innerText = `Done. Found ${rawMatches.length} raw hits.`;
-            
-        }, 50); // Small delay to prevent UI freeze
+            document.getElementById('status').innerText = `Done. Found ${matches.length} hits.`;
+
+        }, 50);
     }
 </script>
 
