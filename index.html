@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burmese JSON Concordancer</title>
+    <title>Burmese Lyrics Concordancer</title>
     <style>
         /* --- Visual Styles --- */
         body { 
             font-family: "Pyidaungsu", "Myanmar3", "Segoe UI", sans-serif; 
             padding: 40px; background-color: #f8f9fa; color: #333;
-            max-width: 1400px; /* Wider to fit metadata */
+            max-width: 1400px; 
             margin: 0 auto; 
         }
 
@@ -35,15 +35,20 @@
         
         table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; margin-bottom: 20px; table-layout: fixed; }
         th { background-color: #009879; color: #ffffff; padding: 12px; text-align: left; font-size: 0.9em; }
-        td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 0.95em; word-wrap: break-word; }
+        td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 0.95em; word-wrap: break-word; vertical-align: middle; }
         tr:nth-child(even) { background-color: #f9f9f9; }
 
-        /* Concordance Columns - Adjusted for Metadata */
-        .col-meta { width: 20%; color: #444; font-size: 0.85em; background: #fafafa; border-right: 1px solid #eee; }
-        .col-left { text-align: right; width: 30%; color: #555; }
+        /* --- Updated Column Widths --- */
+        /* Slightly wider column for Song Info */
+        .col-meta { width: 22%; color: #444; font-size: 0.85em; background: #fafafa; border-right: 1px solid #eee; line-height: 1.4em; }
+        .col-left { text-align: right; width: 29%; color: #555; }
         .col-kwic { text-align: center; width: 15%; font-weight: bold; color: #d9534f; background: #fff0f0; white-space: nowrap; }
-        .col-right { text-align: left; width: 30%; color: #555; }
+        .col-right { text-align: left; width: 29%; color: #555; }
         
+        /* Badges for Artist/Composer */
+        .meta-tag { display: block; margin-top: 2px; color: #666; font-size: 0.9em; }
+        .meta-icon { opacity: 0.6; margin-right: 4px; }
+
         /* Collocate Table */
         .col-len { width: 15%; font-weight: bold; color: #555; }
         .col-phrase { width: 65%; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
@@ -83,8 +88,8 @@
     <table id="resultsTable">
         <thead>
             <tr>
-                <!-- New Column for Attributes -->
-                <th class="col-meta">Source Attributes</th>
+                <!-- Updated Header -->
+                <th class="col-meta">Song Details</th>
                 <th class="col-left">Left Context</th>
                 <th class="col-kwic">Keyword</th>
                 <th class="col-right">Right Context</th>
@@ -115,9 +120,9 @@
     // DATA CONFIGURATION
     // ==========================================
     let globalCorpus = []; 
-    let sourceMap = []; // Maps index ranges to Metadata objects
+    let sourceMap = []; 
 
-    // Hardcoded constraints for stability
+    // Hardcoded constraints
     const FREQ_THRESHOLD = 20; 
     const MAX_PHRASE_LEN = 3; 
 
@@ -127,52 +132,55 @@
         .then(jsonData => {
             let currentIndex = 0;
             
-            // Iterate over every song/entry in the JSON
             jsonData.forEach(entry => {
-                // Assume entry.text contains the syllable broken string
-                // Clean newlines just in case
-                let cleanText = entry.text.replace(/[\r\n]+/g, ' ');
-                let tokens = cleanText.split(/\s+/).filter(t => t.length > 0);
+                // FALLBACK: Looks for 'text' OR 'lyrics' OR 'body' in your JSON
+                let rawText = entry.text || entry.lyrics || entry.body || "";
                 
-                // Record the range for this specific song
-                let start = currentIndex;
-                let end = currentIndex + tokens.length - 1;
-                
-                sourceMap.push({
-                    start: start,
-                    end: end,
-                    meta: entry // Store the whole object (title, artist, etc)
-                });
+                if (rawText) {
+                    let cleanText = rawText.replace(/[\r\n]+/g, ' ');
+                    let tokens = cleanText.split(/\s+/).filter(t => t.length > 0);
+                    
+                    let start = currentIndex;
+                    let end = currentIndex + tokens.length - 1;
+                    
+                    sourceMap.push({
+                        start: start,
+                        end: end,
+                        meta: entry // Store the whole JSON object
+                    });
 
-                // Add to the master search array
-                globalCorpus = globalCorpus.concat(tokens);
-                currentIndex += tokens.length;
-
-                // Add a "Wall" so searches don't bleed from Song A into Song B
-                globalCorpus.push("###EOF###");
-                currentIndex++;
+                    globalCorpus = globalCorpus.concat(tokens);
+                    currentIndex += tokens.length;
+                    globalCorpus.push("###EOF###");
+                    currentIndex++;
+                }
             });
 
-            document.getElementById('status').innerText = `Loaded ${sourceMap.length} documents (${globalCorpus.length.toLocaleString()} syllables).`;
+            document.getElementById('status').innerText = `Loaded ${sourceMap.length} songs (${globalCorpus.length.toLocaleString()} syllables).`;
             document.getElementById('status').style.color = "green";
         })
         .catch(err => {
             console.error(err);
-            document.getElementById('status').innerText = "Error loading 'corpus.json'. Check format.";
+            document.getElementById('status').innerText = "Error: Check console. Is corpus.json valid?";
             document.getElementById('status').style.color = "red";
         });
 
-    // 2. HELPER: Format Metadata for Display
-    // CHANGE THIS FUNCTION to match your JSON keys!
+    // 2. UPDATED HELPER: Format Metadata specifically for your JSON
     function getMetaString(metaObj) {
-        // Example: returns "Song Title (Artist)"
-        // If your JSON has "year", you can add that too.
+        // Extract fields safely
         let title = metaObj.title || "Unknown Title";
-        let artist = metaObj.artist ? ` (${metaObj.artist})` : "";
-        return `<strong>${title}</strong>${artist}`;
+        let voc = metaObj.vocalist || "Unknown";
+        let comp = metaObj.composer || "Unknown";
+        
+        // Return HTML with icons
+        return `
+            <strong style="color:#009879; font-size:1.05em;">${title}</strong>
+            <span class="meta-tag"><span class="meta-icon">🎤</span> ${voc}</span>
+            <span class="meta-tag"><span class="meta-icon">🎼</span> ${comp}</span>
+        `;
     }
 
-    // 3. HELPER: Syllable Breaker (for search input)
+    // 3. HELPER: Syllable Breaker
     function sylBreak(text) {
         const myanmarConsonant = "[\u1000-\u1021]";
         let re = new RegExp("((?<!^|\\s)" + myanmarConsonant + "(?![\\u1037\\u1039\\u103A]))", "g");
@@ -182,7 +190,6 @@
 
     // 4. HELPER: Find Metadata by Index
     function getSourceInfo(index) {
-        // Simple loop to find which song range this index falls into
         for(let item of sourceMap) {
             if(index >= item.start && index <= item.end) {
                 return getMetaString(item.meta);
@@ -223,16 +230,13 @@
                     }
 
                     if (isMatch) {
-                        // Identify Source
                         let metaHtml = getSourceInfo(i);
 
-                        // Context
                         let startLeft = Math.max(0, i - 10);
                         let leftCtx = globalCorpus.slice(startLeft, i).join(" ");
                         let endRight = Math.min(globalCorpus.length, i + qLen + 10);
                         let rightCtx = globalCorpus.slice(i + qLen, endRight).join(" ");
 
-                        // Raw tokens for stats
                         let rawLeft = globalCorpus.slice(Math.max(0, i - MAX_PHRASE_LEN), i);
                         let rawRight = globalCorpus.slice(i + qLen, Math.min(globalCorpus.length, i + qLen + MAX_PHRASE_LEN));
 
@@ -266,11 +270,10 @@
             if(matches.length === 0) conRows = `<tr><td colspan="4" style="text-align:center">No matches found.</td></tr>`;
             conTbody.innerHTML = conRows;
 
-            // --- Step C: Collocate Analysis (Optimized) ---
+            // --- Step C: Collocate Analysis ---
             let patternCounts = {};
 
             matches.forEach(m => {
-                // Right Side
                 for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
                     if (m.rawRight.length >= len) {
                         let sub = m.rawRight.slice(0, len).join(" ");
@@ -279,7 +282,6 @@
                         patternCounts[key] = (patternCounts[key] || 0) + 1;
                     }
                 }
-                // Left Side
                 for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
                     if (m.rawLeft.length >= len) {
                         let sub = m.rawLeft.slice(m.rawLeft.length - len).join(" ");
@@ -290,7 +292,6 @@
                 }
             });
 
-            // Sort & Filter
             let sorted = [];
             for (let key in patternCounts) {
                 if (patternCounts[key] >= FREQ_THRESHOLD) {
@@ -300,7 +301,6 @@
             }
             sorted.sort((a, b) => b.count - a.count);
 
-            // Render Collocates
             let colRows = "";
             if (sorted.length === 0) {
                 colRows = `<tr><td colspan="3" style="text-align:center">No patterns found > ${FREQ_THRESHOLD} times.</td></tr>`;
