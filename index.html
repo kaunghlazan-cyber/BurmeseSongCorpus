@@ -3,17 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burmese Lyrics Concordancer</title>
+    <title>Burmese Lyrics Concordancer (Diagnostic)</title>
+    <!-- 1. Force Load Burmese Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Pyidaungsu&display=swap" rel="stylesheet">
+    
     <style>
         /* --- Visual Styles --- */
         body { 
-            font-family: "Pyidaungsu", "Myanmar3", "Segoe UI", sans-serif; 
+            font-family: "Padauk", "Pyidaungsu", "Myanmar3", sans-serif; /* Priority to Padauk */
             padding: 40px; background-color: #f8f9fa; color: #333;
-            max-width: 1400px; 
-            margin: 0 auto; 
+            max-width: 1400px; margin: 0 auto; 
         }
 
         h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+
+        /* DEBUG BOX STYLE */
+        #debugBox {
+            background: #e7f5ff; border: 2px solid #004085; color: #004085;
+            padding: 15px; margin-bottom: 20px; border-radius: 8px;
+            font-family: monospace; font-size: 14px; white-space: pre-wrap;
+        }
 
         .controls { 
             background: #ffffff; padding: 20px; border-radius: 12px; 
@@ -21,7 +30,7 @@
         }
         .input-group { margin: 10px; display: inline-block; vertical-align: bottom; }
         label { font-size: 0.85em; color: #666; display: block; margin-bottom: 5px; text-align: left; font-weight: bold; }
-        input[type="text"] { padding: 10px; width: 250px; border: 1px solid #ddd; border-radius: 6px; }
+        input[type="text"] { padding: 10px; width: 250px; border: 1px solid #ddd; border-radius: 6px; font-family: "Padauk", sans-serif; }
         select { padding: 10px; border-radius: 6px; border: 1px solid #ddd; background: white; }
         
         button { 
@@ -32,25 +41,20 @@
 
         /* Tables */
         .section-title { margin-top: 40px; margin-bottom: 10px; font-size: 1.3em; color: #009879; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
-        
         table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; margin-bottom: 20px; table-layout: fixed; }
         th { background-color: #009879; color: #ffffff; padding: 12px; text-align: left; font-size: 0.9em; }
-        td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 0.95em; word-wrap: break-word; vertical-align: middle; }
+        td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 1em; word-wrap: break-word; vertical-align: middle; }
         tr:nth-child(even) { background-color: #f9f9f9; }
 
-        /* --- Updated Column Widths --- */
-        .col-meta { width: 22%; color: #444; font-size: 0.85em; background: #fafafa; border-right: 1px solid #eee; line-height: 1.4em; }
+        /* Columns */
+        .col-meta { width: 22%; color: #444; font-size: 0.9em; background: #fafafa; border-right: 1px solid #eee; line-height: 1.5em; }
         .col-left { text-align: right; width: 29%; color: #555; }
         .col-kwic { text-align: center; width: 15%; font-weight: bold; color: #d9534f; background: #fff0f0; white-space: nowrap; }
         .col-right { text-align: left; width: 29%; color: #555; }
         
-        .meta-tag { display: block; margin-top: 2px; color: #666; font-size: 0.9em; }
+        /* Badges */
+        .meta-tag { display: block; margin-top: 2px; color: #666; font-size: 0.95em; }
         .meta-icon { opacity: 0.6; margin-right: 4px; }
-
-        /* Collocate Table */
-        .col-len { width: 15%; font-weight: bold; color: #555; }
-        .col-phrase { width: 65%; font-family: "Myanmar3", "Pyidaungsu", sans-serif; }
-        .col-count { width: 20%; text-align: right; font-weight: bold; color: #009879; }
 
         #status { font-weight: 500; margin-bottom: 10px; font-size: 0.9em; }
         .credit { margin-top: 50px; text-align: center; color: #aaa; font-size: 0.8em; }
@@ -60,6 +64,9 @@
 <body>
 
     <h1>Burmese Lyrics Concordancer</h1>
+
+    <!-- DEBUG BOX to see what's wrong -->
+    <div id="debugBox">Initializing Diagnostics...</div>
 
     <div class="controls">
         <div id="status">Loading corpus.json...</div>
@@ -100,9 +107,9 @@
     <table id="collocateTable">
         <thead>
             <tr>
-                <th>Pattern Type</th>
-                <th>Phrase Found</th>
-                <th style="text-align:right">Frequency</th>
+                <th style="width:15%">Pattern Type</th>
+                <th style="width:65%">Phrase Found</th>
+                <th style="width:20%; text-align:right">Frequency</th>
             </tr>
         </thead>
         <tbody id="collocateBody"></tbody>
@@ -113,66 +120,86 @@
     </div>
 
 <script>
-    // ==========================================
-    // DATA CONFIGURATION
-    // ==========================================
     let globalCorpus = []; 
     let sourceMap = []; 
-
-    // Hardcoded constraints
     const FREQ_THRESHOLD = 20; 
     const MAX_PHRASE_LEN = 3; 
+
+    // --- AUTOMATIC KEY DETECTOR ---
+    // This will hold the "real" names of your keys (e.g., "SongTitle" instead of "title")
+    let detectedKeys = {
+        title: null,
+        vocalist: null,
+        composer: null,
+        lyrics: null
+    };
+
+    function logDebug(msg) {
+        document.getElementById('debugBox').innerText += "\n" + msg;
+    }
 
     // 1. Load JSON Corpus
     fetch('corpus.json')
         .then(response => response.json())
         .then(jsonData => {
             
-            // SECURITY CHECK
-            if (!Array.isArray(jsonData)) {
-                alert("Error: corpus.json must be an array [...]");
+            if (!Array.isArray(jsonData) || jsonData.length === 0) {
+                logDebug("ERROR: JSON is not an array or is empty.");
                 return;
             }
 
-            // SMART DETECTION FOR LYRICS
-            // We look for the longest string field in the first item to find the lyrics
-            let firstItem = jsonData[0];
-            let lyricsKey = "";
-            let maxLength = 0;
+            // --- DIAGNOSTICS: INSPECT FIRST ITEM ---
+            let first = jsonData[0];
+            let flatKeys = Object.keys(first);
+            let metaKeys = [];
+            
+            // Check if metadata is nested
+            let metaObject = first; 
+            if (first.metadata) { metaObject = first.metadata; metaKeys = Object.keys(first.metadata); }
+            else if (first.meta) { metaObject = first.meta; metaKeys = Object.keys(first.meta); }
+            
+            logDebug("File Loaded. Checking structure...");
+            logDebug("Root Keys found: " + flatKeys.join(", "));
+            if(metaKeys.length > 0) logDebug("Metadata Keys found: " + metaKeys.join(", "));
 
-            // Helper to scan keys
-            function findTextKey(obj) {
-                for (let key in obj) {
-                    if (typeof obj[key] === 'string' && obj[key].length > maxLength) {
-                        maxLength = obj[key].length;
-                        lyricsKey = key;
+            // --- SMART KEY MAPPING ---
+            // Helper to find case-insensitive partial match
+            function findKey(obj, searchTerms) {
+                let keys = Object.keys(obj);
+                for (let k of keys) {
+                    let kLower = k.toLowerCase();
+                    for (let term of searchTerms) {
+                        if (kLower.includes(term)) return k;
                     }
+                }
+                return null;
+            }
+
+            // 1. Find Lyrics (Longest Text Field)
+            let maxLen = 0;
+            for (let k of flatKeys) {
+                if (typeof first[k] === 'string' && first[k].length > maxLen) {
+                    maxLen = first[k].length;
+                    detectedKeys.lyrics = k;
                 }
             }
 
-            findTextKey(firstItem);
-            
-            // If not found at root, check if it's inside a 'data' or 'content' object?
-            // For now, assume lyrics are at the root or easy to find.
-            if (!lyricsKey) {
-                // Fallback: try 'text', 'lyrics', 'body' explicitly
-                if(firstItem.text) lyricsKey = "text";
-                else if(firstItem.lyrics) lyricsKey = "lyrics";
-                else if(firstItem.body) lyricsKey = "body";
-            }
+            // 2. Find Metadata (Search in metaObject)
+            detectedKeys.title = findKey(metaObject, ["title", "song", "name", "track"]);
+            detectedKeys.vocalist = findKey(metaObject, ["voc", "sing", "artist", "performer"]);
+            detectedKeys.composer = findKey(metaObject, ["comp", "writ", "author"]);
 
-            if (!lyricsKey) {
-                console.error("Could not auto-detect lyrics field. Structure:", firstItem);
-                document.getElementById('status').innerText = "Error: Could not find lyrics field in JSON.";
-                document.getElementById('status').style.color = "red";
-                return;
-            }
+            logDebug("--- AUTO-DETECTED MAPPING ---");
+            logDebug(`Lyrics Field   : ${detectedKeys.lyrics}`);
+            logDebug(`Title Field    : ${detectedKeys.title}`);
+            logDebug(`Vocalist Field : ${detectedKeys.vocalist}`);
+            logDebug(`Composer Field : ${detectedKeys.composer}`);
 
             // PROCESS DATA
             let currentIndex = 0;
             
             jsonData.forEach(entry => {
-                let rawText = entry[lyricsKey] || "";
+                let rawText = entry[detectedKeys.lyrics] || "";
                 
                 if (rawText) {
                     let cleanText = rawText.replace(/[\r\n]+/g, ' ');
@@ -181,10 +208,15 @@
                     let start = currentIndex;
                     let end = currentIndex + tokens.length - 1;
                     
+                    // Determine where metadata lives for this entry
+                    let metaSource = entry;
+                    if(entry.metadata) metaSource = entry.metadata;
+                    else if(entry.meta) metaSource = entry.meta;
+
                     sourceMap.push({
                         start: start,
                         end: end,
-                        meta: entry // Store the whole object
+                        meta: metaSource 
                     });
 
                     globalCorpus = globalCorpus.concat(tokens);
@@ -194,37 +226,31 @@
                 }
             });
 
-            document.getElementById('status').innerText = `Loaded ${sourceMap.length} songs. Lyrics found in: "${lyricsKey}"`;
+            document.getElementById('status').innerText = `Loaded ${sourceMap.length} songs. Ready.`;
             document.getElementById('status').style.color = "green";
         })
         .catch(err => {
-            console.error(err);
-            document.getElementById('status').innerText = "Error loading JSON: " + err.message;
-            document.getElementById('status').style.color = "red";
+            logDebug("CRITICAL ERROR: " + err.message);
         });
 
-    // 2. UPDATED HELPER: Smart Metadata Extraction
-    function getMetaString(entry) {
-        // 1. Determine where the info lives. 
-        // If 'metadata' exists, use that. Otherwise use the entry itself.
-        let info = entry;
-        if (entry.metadata) info = entry.metadata;
-        else if (entry.meta) info = entry.meta;
+    // 2. Display Metadata using Detected Keys
+    function getMetaString(metaObj) {
+        let title = "Unknown Title";
+        let voc = "Unknown";
+        let comp = "Unknown";
 
-        // 2. Extract fields with multiple possible names (Case Insensitive logic handled by ||)
-        let title = info.title || info.Title || info.song || "Unknown Title";
-        let voc = info.vocalist || info.Vocalist || info.singer || info.artist || "Unknown";
-        let comp = info.composer || info.Composer || "Unknown";
+        if(detectedKeys.title && metaObj[detectedKeys.title]) title = metaObj[detectedKeys.title];
+        if(detectedKeys.vocalist && metaObj[detectedKeys.vocalist]) voc = metaObj[detectedKeys.vocalist];
+        if(detectedKeys.composer && metaObj[detectedKeys.composer]) comp = metaObj[detectedKeys.composer];
         
-        // 3. Return HTML
         return `
-            <strong style="color:#009879; font-size:1.05em;">${title}</strong>
+            <strong style="color:#009879; font-size:1.1em;">${title}</strong>
             <span class="meta-tag"><span class="meta-icon">🎤</span> ${voc}</span>
             <span class="meta-tag"><span class="meta-icon">🎼</span> ${comp}</span>
         `;
     }
 
-    // 3. HELPER: Syllable Breaker
+    // 3. Syllable Breaker
     function sylBreak(text) {
         const myanmarConsonant = "[\u1000-\u1021]";
         let re = new RegExp("((?<!^|\\s)" + myanmarConsonant + "(?![\\u1037\\u1039\\u103A]))", "g");
@@ -232,7 +258,7 @@
         return broken.replace(/\s+/g, ' ').trim();
     }
 
-    // 4. HELPER: Find Metadata by Index
+    // 4. Find Metadata by Index
     function getSourceInfo(index) {
         for(let item of sourceMap) {
             if(index >= item.start && index <= item.end) {
@@ -242,7 +268,7 @@
         return "Unknown Source";
     }
 
-    // 5. MAIN SEARCH LOGIC
+    // 5. Search Logic
     function runSearch() {
         const rawInput = document.getElementById('searchInput').value.trim();
         const limitStr = document.getElementById('limitSelect').value;
@@ -274,12 +300,10 @@
 
                     if (isMatch) {
                         let metaHtml = getSourceInfo(i);
-
                         let startLeft = Math.max(0, i - 10);
                         let leftCtx = globalCorpus.slice(startLeft, i).join(" ");
                         let endRight = Math.min(globalCorpus.length, i + qLen + 10);
                         let rightCtx = globalCorpus.slice(i + qLen, endRight).join(" ");
-
                         let rawLeft = globalCorpus.slice(Math.max(0, i - MAX_PHRASE_LEN), i);
                         let rawRight = globalCorpus.slice(i + qLen, Math.min(globalCorpus.length, i + qLen + MAX_PHRASE_LEN));
 
@@ -295,9 +319,8 @@
                 }
             }
 
-            document.getElementById('status').innerText = `Found ${matches.length} hits. Rendering...`;
+            document.getElementById('status').innerText = `Found ${matches.length} hits.`;
 
-            // Render Concordance
             let displayCount = (limitStr === 'all') ? matches.length : parseInt(limitStr);
             let displayMatches = matches.slice(0, Math.min(matches.length, displayCount));
             
@@ -313,9 +336,7 @@
             if(matches.length === 0) conRows = `<tr><td colspan="4" style="text-align:center">No matches found.</td></tr>`;
             conTbody.innerHTML = conRows;
 
-            // Render Collocates
             let patternCounts = {};
-
             matches.forEach(m => {
                 for (let len = 1; len <= MAX_PHRASE_LEN; len++) {
                     if (m.rawRight.length >= len) {
@@ -357,11 +378,9 @@
                 });
             }
             colTbody.innerHTML = colRows;
-            document.getElementById('status').innerText = `Done. Found ${matches.length} hits.`;
 
         }, 50);
     }
 </script>
-
 </body>
 </html>
